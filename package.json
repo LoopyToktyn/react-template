@@ -3,11 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "webpack serve --mode development --open",
-    "build": "webpack --mode production",
-    "dev": "cross-env REACT_APP_ENABLE_AUTH=false webpack serve --mode development --open",
+    "start": "cross-env NODE_ENV=local webpack serve --mode development --open",
+    "start:dev": "cross-env NODE_ENV=dev webpack serve --mode development --open",
+    "build": "cross-env NODE_ENV=local webpack --mode production",
+    "build:dev": "cross-env NODE_ENV=dev webpack --mode production",
     "lint": "eslint . --ext .ts,.tsx",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "dist": "npx serve -s dist -l 3000"
   },
   "dependencies": {
     "@emotion/react": "^11.10.6",

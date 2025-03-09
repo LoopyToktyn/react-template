@@ -3,7 +3,8 @@ import { Route, Routes, Navigate } from "react-router-dom";
 import Login from "@pages/Login";
 import NotFound from "@pages/NotFound";
 import { useAuth } from "@hooks/useAuth";
-import Dashboard from "@pages/Dashboard";
+import Dashboard from "@pages/ExampleMaterialThemedPage";
+import ExampleMaterialThemedPage from "@pages/ExampleMaterialThemedPage";
 
 // Example lazy loading if we had more pages
 // const LazyLoadedPage = lazy(() => import("@pages/LazyLoadedPage"));
@@ -49,8 +50,9 @@ const RoutesComponent = () => {
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" />} />
+        <Route path="/" element={<Navigate to="/example" />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/example" element={<ExampleMaterialThemedPage />} />
 
         <Route
           path="/dashboard"

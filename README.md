@@ -73,14 +73,24 @@ yarn build
 
 This compiles the project into the `dist/` folder.
 
-### 4. Running Lint and Formatting
+### 4. Running the Production Build
+
+After building the project, you can serve the `dist/` folder locally using:
+
+```sh
+npm run dist
+```
+
+This will serve the production build at **http://localhost:3000** using the `serve` package.
+
+### 5. Running Lint and Formatting
 
 ```sh
 npm run lint
 npm run format
 ```
 
-### 5. Running with Different `.env` Configurations
+### 6. Running with Different `.env` Configurations
 
 - The app reads from `.env` for environment variables.
 - To override, create additional files: `.env.development`, `.env.production`, etc.
