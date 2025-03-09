@@ -9,20 +9,45 @@ import {
   Paper,
   Toolbar,
   Typography,
+  CircularProgress,
 } from "@mui/material";
+import { useQuery } from "react-query";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
+import axiosInstance from "@api/axiosInstance"; // Use our global Axios instance
+
+// Function to fetch a random post using our global axios instance
+const fetchRandomPost = async () => {
+  const randomId = Math.floor(Math.random() * 100) + 1; // Random ID between 1-100
+  const { data } = await axiosInstance.get(
+    `https://jsonplaceholder.typicode.com/posts/${randomId}`
+  );
+  return data;
+};
 
 const ExampleMaterialThemedPage: React.FC = () => {
   const theme = useTheme();
+  const navigate = useNavigate(); // Hook to navigate between routes
+
+  // Use React Query to fetch a random post
+  const { data, refetch, isFetching, isError, error } = useQuery<any>(
+    "randomPost",
+    fetchRandomPost,
+    {
+      refetchOnWindowFocus: false, // Prevent refetching when switching tabs
+      enabled: false, // Only fetch when button is clicked
+    }
+  );
 
   return (
-    // The "fancy-page" class comes from our global CSS (see below)
     <Box className="fancy-page">
       <AppBar position="static" color="primary">
         <Toolbar>
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             Fancy Material-UI Page
           </Typography>
-          <Button color="inherit">Login</Button>
+          <Button color="inherit" onClick={() => navigate("/login")}>
+            Login
+          </Button>
         </Toolbar>
       </AppBar>
 
@@ -66,14 +91,47 @@ const ExampleMaterialThemedPage: React.FC = () => {
                 gutterBottom
                 sx={{ color: theme.palette.primary.main }}
               >
-                Feature One
+                Feature One (React Query Example)
               </Typography>
               <Typography variant="body2">
-                Explore the amazing features built with Material UI. Enjoy
-                responsive design, theme customizations, and more.
+                Click the button below to load a random post from
+                JSONPlaceholder using React Query.
               </Typography>
+              <Button
+                variant="contained"
+                sx={{ mt: theme.spacing(2) }}
+                onClick={() => refetch()}
+                disabled={isFetching}
+              >
+                {isFetching ? "Loading..." : "Fetch Random Post"}
+              </Button>
+
+              {/* Display Loading State */}
+              {isFetching && <CircularProgress sx={{ mt: 2 }} />}
+
+              {/* Display Error Message */}
+              {isError && (
+                <Typography color="error" sx={{ mt: 2 }}>
+                  Error:{" "}
+                  {error instanceof Error
+                    ? error.message
+                    : "Something went wrong"}
+                </Typography>
+              )}
+
+              {/* Display Data */}
+              {data && (
+                <Paper
+                  elevation={2}
+                  sx={{ mt: theme.spacing(2), p: theme.spacing(2) }}
+                >
+                  <Typography variant="h6">{data.title}</Typography>
+                  <Typography variant="body2">{data.body}</Typography>
+                </Paper>
+              )}
             </Paper>
           </Grid>
+
           <Grid item xs={12} md={6}>
             <Paper elevation={3} sx={{ p: theme.spacing(3) }}>
               <Typography
