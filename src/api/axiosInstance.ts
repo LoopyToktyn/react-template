@@ -1,5 +1,5 @@
 import axios, { AxiosResponse, AxiosError } from "axios";
-import { toast } from "react-toastify";
+import toast from "@utils/toastUtils";
 
 interface ApiResponse {
   message?: string;

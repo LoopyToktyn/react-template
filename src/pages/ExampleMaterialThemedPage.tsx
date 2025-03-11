@@ -11,32 +11,31 @@ import {
   Typography,
   CircularProgress,
 } from "@mui/material";
-import { useQuery } from "react-query";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
-import axiosInstance from "@api/axiosInstance"; // Use our global Axios instance
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import axiosInstance from "@api/axiosInstance";
 
-// Function to fetch a random post using our global axios instance
-const fetchRandomPost = async () => {
-  const randomId = Math.floor(Math.random() * 100) + 1; // Random ID between 1-100
+// Function to fetch a random post (supports request cancellation)
+const fetchRandomPost = async ({ signal }: { signal?: AbortSignal }) => {
+  const randomId = Math.floor(Math.random() * 100) + 1;
   const { data } = await axiosInstance.get(
-    `https://jsonplaceholder.typicode.com/posts/${randomId}`
+    `https://jsonplaceholder.typicode.com/possts/${randomId}`,
+    { signal }
   );
   return data;
 };
 
 const ExampleMaterialThemedPage: React.FC = () => {
   const theme = useTheme();
-  const navigate = useNavigate(); // Hook to navigate between routes
+  const navigate = useNavigate();
 
-  // Use React Query to fetch a random post
-  const { data, refetch, isFetching, isError, error } = useQuery<any>(
-    "randomPost",
-    fetchRandomPost,
-    {
-      refetchOnWindowFocus: false, // Prevent refetching when switching tabs
-      enabled: false, // Only fetch when button is clicked
-    }
-  );
+  // React Query setup with the latest best practices
+  const { data, refetch, isFetching, isError, error } = useQuery({
+    queryKey: ["randomPost"],
+    queryFn: fetchRandomPost,
+    enabled: false, // Manual fetching only
+    refetchOnWindowFocus: false,
+  });
 
   return (
     <Box className="fancy-page">
