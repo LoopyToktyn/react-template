@@ -1,3 +1,5 @@
+// theme.ts
+
 import { createTheme } from "@mui/material/styles";
 
 const primaryColor = process.env.REACT_APP_PRIMARY_COLOR || "#1976d2";

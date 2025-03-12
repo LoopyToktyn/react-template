@@ -1,49 +1,40 @@
-import React, { JSX, lazy, Suspense } from "react";
+// src/routes.tsx
+import React, { lazy, Suspense } from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
 import Login from "@pages/Login";
 import NotFound from "@pages/NotFound";
-import { useAuth } from "@hooks/useAuth";
-import Dashboard from "@pages/ExampleMaterialThemedPage";
+import { useAuthContext } from "@context/AuthContext";
 import ExampleMaterialThemedPage from "@pages/ExampleMaterialThemedPage";
+import Dashboard from "@pages/ExampleMaterialThemedPage";
 
-// Example lazy loading if we had more pages
 // const LazyLoadedPage = lazy(() => import("@pages/LazyLoadedPage"));
 
-export function isAuthenticated() {
-  // Example logic for whether user is authenticated
-  const token = localStorage.getItem("token");
-  return token ? true : false;
-}
-
-// Example role-based check
-export function hasRole(requiredRoles: string[]) {
-  const roles = JSON.parse(localStorage.getItem("roles") || "[]");
-  return requiredRoles.some((r) => roles.includes(r));
-}
-
 const RoutesComponent = () => {
-  const { authEnabled } = useAuth();
+  const { authEnabled, isAuthenticated, roles } = useAuthContext();
+
+  // Helper to see if user has at least one required role
+  const hasAnyRole = (requiredRoles: string[]) => {
+    if (!roles || roles.length === 0) return false;
+    return requiredRoles.some((r) => roles.includes(r));
+  };
 
   const PrivateRoute = ({
     children,
-    requiredRoles,
+    requiredRoles = [],
   }: {
     children: JSX.Element;
     requiredRoles?: string[];
   }) => {
     if (!authEnabled) {
-      // If auth is disabled in .env, just render
+      // If auth is disabled via .env, just render
       return children;
     }
-
-    if (!isAuthenticated()) {
+    if (!isAuthenticated) {
       return <Navigate to="/login" replace />;
     }
-
-    if (requiredRoles && requiredRoles.length > 0 && !hasRole(requiredRoles)) {
+    if (requiredRoles.length > 0 && !hasAnyRole(requiredRoles)) {
       return <Navigate to="/login" replace />;
     }
-
     return children;
   };
 
@@ -52,8 +43,14 @@ const RoutesComponent = () => {
       <Routes>
         <Route path="/" element={<Navigate to="/example" />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/example" element={<ExampleMaterialThemedPage />} />
-
+        <Route
+          path="/example"
+          element={
+            <PrivateRoute requiredRoles={["USER"]}>
+              <ExampleMaterialThemedPage />
+            </PrivateRoute>
+          }
+        />
         <Route
           path="/dashboard"
           element={
@@ -63,7 +60,7 @@ const RoutesComponent = () => {
           }
         />
 
-        {/* Example of lazy loaded page
+        {/* Example lazy load:
         <Route
           path="/lazy"
           element={
@@ -71,8 +68,7 @@ const RoutesComponent = () => {
               <LazyLoadedPage />
             </PrivateRoute>
           }
-        />
-        */}
+        />*/}
 
         <Route path="*" element={<NotFound />} />
       </Routes>

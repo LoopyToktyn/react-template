@@ -117,11 +117,6 @@ npm run format
   const { authEnabled, toggleAuth } = useAuthContext();
   ```
 
-### `useAuth.ts` (Custom Authentication Hook)
-
-- A wrapper around `AuthContext` for easier access.
-- Used to check authentication status and toggle auth.
-
 ### `axiosInstance.ts` (Global Axios Instance)
 
 - Configured with:
