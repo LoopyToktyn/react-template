@@ -9,10 +9,7 @@ const Header: React.FC = () => {
   const { mode, toggleColorMode } = useColorMode();
 
   return (
-    <AppBar
-      position="static"
-      sx={{ backgroundColor: theme.palette.primary.main }}
-    >
+    <AppBar position="static" color="primary">
       <Toolbar>
         <Box
           component="img"

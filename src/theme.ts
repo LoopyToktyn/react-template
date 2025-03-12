@@ -5,43 +5,26 @@ import { createTheme as ogCreateTheme } from "@mui/material/styles";
 const primaryColor = process.env.REACT_APP_PRIMARY_COLOR || "#1976d2"; // Core health blue
 const secondaryColor = process.env.REACT_APP_SECONDARY_COLOR || "#ff6f61"; // Friendly coral
 
-const createTheme = (mode: any) =>
+const createTheme = (mode: "light" | "dark") =>
   ogCreateTheme({
     palette: {
-      mode: mode,
+      mode,
       primary: {
-        main: primaryColor,
-        light: "#63a4ff", // Lightened blue
-        dark: "#004ba0", // Deep blue for contrast
+        main: mode === "light" ? "#1976d2" : "#90caf9", // Different primary for light/dark
+        light: "#63a4ff",
+        dark: "#004ba0",
       },
       secondary: {
-        main: secondaryColor,
-        light: "#ffa07a", // Softer coral
-        dark: "#c62828", // Deep contrast
+        main: mode === "light" ? "#ff6f61" : "#ff8a80", // Adjusted for contrast
       },
       background: {
-        default: "#f5f5f5", // Soft off-white
-        paper: "#ffffff", // White cards
+        default: mode === "light" ? "#f5f5f5" : "#121212",
+        paper: mode === "light" ? "#ffffff" : "#1e1e1e",
       },
       text: {
-        primary: "#212121", // Dark gray for readability
-        secondary: "#757575", // Muted gray for secondary text
+        primary: mode === "light" ? "#212121" : "#ffffff",
+        secondary: mode === "light" ? "#757575" : "#b0b0b0",
       },
-      success: {
-        main: "#4caf50", // Positive feedback
-      },
-      warning: {
-        main: "#ff9800", // Warnings
-      },
-      error: {
-        main: "#d32f2f", // Errors
-      },
-      info: {
-        main: "#0288d1", // Additional emphasis
-      },
-    },
-    typography: {
-      fontFamily: "Roboto, Arial, sans-serif",
     },
   });
 
