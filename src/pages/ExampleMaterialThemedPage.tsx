@@ -39,7 +39,7 @@ const ExampleMaterialThemedPage = () => {
 
   return (
     <Box className="fancy-page">
-      <AppBar position="static" color="primary">
+      {/* <AppBar position="static" color="primary">
         <Toolbar>
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             Fancy Material-UI Page
@@ -48,9 +48,9 @@ const ExampleMaterialThemedPage = () => {
             Login
           </Button>
         </Toolbar>
-      </AppBar>
+      </AppBar> */}
 
-      <Container sx={{ mt: theme.spacing(4) }}>
+      <Container sx={{ pt: theme.spacing(4) }}>
         <Paper elevation={3} sx={{ p: theme.spacing(3), mb: theme.spacing(4) }}>
           <Typography variant="h4" gutterBottom>
             Welcome to the Fancy Page!
@@ -144,6 +144,15 @@ const ExampleMaterialThemedPage = () => {
                 Global styles help maintain consistency throughout the app by
                 applying design patterns across components.
               </Typography>
+
+              <Button
+                variant="contained"
+                sx={{ mt: theme.spacing(2) }}
+                color="inherit"
+                onClick={() => navigate("/login")}
+              >
+                Login
+              </Button>
             </Paper>
           </Grid>
         </Grid>
