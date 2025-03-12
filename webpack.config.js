@@ -29,8 +29,10 @@ module.exports = () => {
     resolve: {
       extensions: [".ts", ".tsx", ".js", ".json"],
       alias: {
+        "@root": path.resolve(__dirname, "src/"),
         "@api": path.resolve(__dirname, "src/api/"),
         "@components": path.resolve(__dirname, "src/components/"),
+        "@config": path.resolve(__dirname, "src/config/"),
         "@context": path.resolve(__dirname, "src/context/"),
         "@hooks": path.resolve(__dirname, "src/hooks/"),
         "@pages": path.resolve(__dirname, "src/pages/"),

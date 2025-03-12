@@ -62,8 +62,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       setUsername(user);
 
       // Then fetch roles
-      const fetchedRoles = await fetchRoles();
-      setRoles(fetchedRoles);
+      // const fetchedRoles = await fetchRoles();
+      // setRoles(fetchedRoles);
     } finally {
       setGlobalLoading(false);
     }

@@ -7,6 +7,7 @@ import App from "./App";
 import "@styles/global.css";
 import { AuthProvider } from "@context/AuthContext";
 import { LoadingProvider } from "@context/LoadingContext";
+import { ColorModeProvider } from "@context/ColorModeContext";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,11 +31,13 @@ root.render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <LoadingProvider>
-          <AuthProvider>
-            <App />
-          </AuthProvider>
-        </LoadingProvider>
+        <ColorModeProvider>
+          <LoadingProvider>
+            <AuthProvider>
+              <App />
+            </AuthProvider>
+          </LoadingProvider>
+        </ColorModeProvider>
       </BrowserRouter>
     </QueryClientProvider>
   </React.StrictMode>

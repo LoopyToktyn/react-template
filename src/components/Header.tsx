@@ -1,10 +1,12 @@
-// src/components/Header.tsx
 import React from "react";
-import { AppBar, Toolbar, Typography, Box } from "@mui/material";
+import { AppBar, Toolbar, Typography, Box, IconButton } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
+import { LightMode, DarkMode } from "@mui/icons-material";
+import { useColorMode } from "@context/ColorModeContext";
 
 const Header: React.FC = () => {
   const theme = useTheme();
+  const { mode, toggleColorMode } = useColorMode();
 
   return (
     <AppBar
@@ -22,9 +24,19 @@ const Header: React.FC = () => {
             mr: 2,
           }}
         />
-        <Typography variant="h6" component="div">
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
           My Cool App
         </Typography>
+
+        {/* Dark mode toggle */}
+        <IconButton
+          size="large"
+          edge="end"
+          color="inherit"
+          onClick={toggleColorMode}
+        >
+          {mode === "dark" ? <LightMode /> : <DarkMode />}
+        </IconButton>
       </Toolbar>
     </AppBar>
   );

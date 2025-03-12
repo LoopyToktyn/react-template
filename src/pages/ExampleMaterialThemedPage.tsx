@@ -19,13 +19,13 @@ import axiosInstance from "@api/axiosInstance";
 const fetchRandomPost = async ({ signal }: { signal?: AbortSignal }) => {
   const randomId = Math.floor(Math.random() * 100) + 1;
   const { data } = await axiosInstance.get(
-    `https://jsonplaceholder.typicode.com/possts/${randomId}`,
+    `https://jsonplaceholder.typicode.com/posts/${randomId}`,
     { signal }
   );
   return data;
 };
 
-const ExampleMaterialThemedPage: React.FC = () => {
+const ExampleMaterialThemedPage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
 
@@ -148,20 +148,6 @@ const ExampleMaterialThemedPage: React.FC = () => {
           </Grid>
         </Grid>
       </Container>
-
-      <Box
-        component="footer"
-        sx={{
-          py: theme.spacing(2),
-          mt: theme.spacing(4),
-          backgroundColor: theme.palette.grey[200],
-          textAlign: "center",
-        }}
-      >
-        <Typography variant="caption">
-          © 2025 Fancy Material-UI Page. All rights reserved.
-        </Typography>
-      </Box>
     </Box>
   );
 };
