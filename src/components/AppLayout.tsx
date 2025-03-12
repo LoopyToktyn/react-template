@@ -26,7 +26,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       <Menu />
 
       {/* Content area grows/shrinks so footer can stick to bottom if content is short */}
-      <Box component="main" sx={{ flex: 1, p: 2 }}>
+      <Box component="main" sx={{ flex: 1 }}>
         {children}
       </Box>
 
