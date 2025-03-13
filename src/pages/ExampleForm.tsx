@@ -226,7 +226,18 @@ const theme = createTheme();
 export default function ExamplePage() {
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>
+      <Typography
+        variant="h4"
+        gutterBottom
+        sx={{
+          fontFamily: "Orbitron , sans-serif",
+          background: "linear-gradient(90deg, #ff6f61, #1976d2)",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          textTransform: "uppercase",
+          fontWeight: 700,
+        }}
+      >
         Example Form with Advanced Layout and Dictionary Config
       </Typography>
       <CrudForm

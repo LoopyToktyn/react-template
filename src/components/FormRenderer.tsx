@@ -16,6 +16,7 @@ import {
   Chip,
   Box,
   Typography,
+  FormLabel,
 } from "@mui/material";
 import { FormConfigDictionary, LayoutConfig } from "@root/types";
 
@@ -83,7 +84,7 @@ const FormRenderer: React.FC<FormRendererProps> = ({
       case "radio":
         return (
           <FormControl component="fieldset" error={Boolean(errorMsg)}>
-            <InputLabel>{field.label}</InputLabel>
+            <FormLabel>{field.label}</FormLabel>
             <RadioGroup
               name={field.name}
               value={value}

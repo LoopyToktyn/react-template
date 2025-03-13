@@ -5,6 +5,8 @@ import { createTheme as ogCreateTheme } from "@mui/material/styles";
 const primaryColor = process.env.REACT_APP_PRIMARY_COLOR || "#1976d2"; // Core health blue
 const secondaryColor = process.env.REACT_APP_SECONDARY_COLOR || "#ff6f61"; // Friendly coral
 
+const FONT_FAMILY = "Inter, sans-serif";
+
 const createTheme = (mode: "light" | "dark") =>
   ogCreateTheme({
     palette: {
@@ -25,6 +27,13 @@ const createTheme = (mode: "light" | "dark") =>
         primary: mode === "light" ? "#212121" : "#ffffff",
         secondary: mode === "light" ? "#757575" : "#b0b0b0",
       },
+    },
+    typography: {
+      fontFamily: FONT_FAMILY,
+      h1: { fontFamily: FONT_FAMILY, fontWeight: 700 },
+      h2: { fontFamily: FONT_FAMILY, fontWeight: 600 },
+      h3: { fontFamily: FONT_FAMILY, fontWeight: 600 },
+      h4: { fontFamily: FONT_FAMILY, fontWeight: 600 },
     },
   });
 
