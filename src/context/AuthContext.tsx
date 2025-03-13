@@ -16,13 +16,20 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  authEnabled: boolean; // from your .env setting
-  toggleAuth: () => void; // toggles the feature, not the user’s session
+  authEnabled: boolean;
+  toggleAuth: () => void;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
+  invalidateAuth: () => void;
 }
 
-// Create the context with default values
+const AUTH_STORAGE_KEY = "authState";
+
+const getStoredAuth = (): AuthState => {
+  const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+  return stored ? JSON.parse(stored) : { isAuthenticated: false, roles: [] };
+};
+
 const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   roles: [],
@@ -30,6 +37,7 @@ const AuthContext = createContext<AuthContextType>({
   toggleAuth: () => {},
   login: async () => {},
   logout: () => {},
+  invalidateAuth: () => {},
 });
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
@@ -38,12 +46,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const [authEnabled, setAuthEnabled] = useState(
     process.env.REACT_APP_ENABLE_AUTH !== "false"
   );
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [roles, setRoles] = useState<string[]>([]);
-  const [username, setUsername] = useState<string>();
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    getStoredAuth().isAuthenticated
+  );
+  const [roles, setRoles] = useState<string[]>(getStoredAuth().roles);
+  const [username, setUsername] = useState<string | undefined>();
   const { setGlobalLoading } = useLoading();
 
-  // Toggle the “feature” of auth (not user’s status)
+  useEffect(() => {
+    localStorage.setItem(
+      AUTH_STORAGE_KEY,
+      JSON.stringify({ isAuthenticated, roles })
+    );
+  }, [isAuthenticated, roles]);
+
   const toggleAuth = () => {
     setAuthEnabled((prev) => !prev);
   };
@@ -80,9 +96,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const logout = () => {
     // e.g. call /api/logout to clear session cookies
     axios.post("/api/logout", {}, { withCredentials: true }).catch(() => {});
+    invalidateAuth();
+  };
+
+  const invalidateAuth = () => {
     setIsAuthenticated(false);
     setRoles([]);
     setUsername(undefined);
+    localStorage.removeItem(AUTH_STORAGE_KEY);
   };
 
   // On first load, check if cookie is valid by calling /getRoles
@@ -94,9 +115,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         setRoles(userRoles);
         setIsAuthenticated(true);
       } catch (err) {
-        // If it fails, user remains not authenticated
-        setIsAuthenticated(false);
-        setRoles([]);
+        invalidateAuth();
       } finally {
         setGlobalLoading(false);
       }
@@ -115,6 +134,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     toggleAuth,
     login,
     logout,
+    invalidateAuth,
   };
 
   return (

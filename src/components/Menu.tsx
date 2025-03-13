@@ -1,4 +1,4 @@
-import React, { useState, MouseEvent } from "react";
+import React, { useState, useEffect, MouseEvent } from "react";
 import {
   Box,
   Toolbar,
@@ -6,14 +6,16 @@ import {
   Paper,
   Menu as MuiMenu,
   MenuItem,
+  ClickAwayListener,
   alpha,
   useTheme,
+  PopoverOrigin,
 } from "@mui/material";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "@context/AuthContext";
 import { ExpandMore } from "@mui/icons-material";
 
-// We can define a nested menu structure
+// Define the nested menu structure
 interface MenuItemConfig {
   label: string;
   path?: string; // only for leaf items
@@ -21,7 +23,6 @@ interface MenuItemConfig {
   subMenu?: MenuItemConfig[];
 }
 
-// Example: nested menu
 const menuItems: MenuItemConfig[] = [
   {
     label: "Example",
@@ -35,6 +36,16 @@ const menuItems: MenuItemConfig[] = [
       {
         label: "Monthly",
         path: "/reports/monthly",
+        subMenu: [
+          {
+            label: "Monthly",
+            path: "/reports/monthly",
+          },
+          {
+            label: "Yearly",
+            path: "/reports/yearly",
+          },
+        ],
       },
       {
         label: "Yearly",
@@ -53,20 +64,26 @@ interface NestedMenuItemProps {
   item: MenuItemConfig;
   roles: string[];
   level?: number;
-  closeMenu?: () => void;
+  closeAllMenus: () => void;
+  closeSignal: number;
 }
 
 const NestedMenuItem: React.FC<NestedMenuItemProps> = ({
   item,
   roles,
   level = 0,
-  closeMenu,
+  closeAllMenus,
+  closeSignal,
 }) => {
   const navigate = useNavigate();
-
-  // If subMenu is present, handle open/close for the child menu
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
+  // Close the submenu if a close signal is received
+  useEffect(() => {
+    setAnchorEl(null);
+  }, [closeSignal]);
+
+  // Check if the user is allowed to see the item
   const canSeeItem = (cfg: MenuItemConfig) => {
     if (!cfg.allowedRoles || cfg.allowedRoles.length === 0) return true;
     return roles.some((role) => cfg.allowedRoles?.includes(role));
@@ -77,12 +94,12 @@ const NestedMenuItem: React.FC<NestedMenuItemProps> = ({
   }
 
   const handleOpen = (e: MouseEvent<HTMLElement>) => {
-    // Only open subMenu if present
     if (item.subMenu && item.subMenu.length > 0) {
       setAnchorEl(e.currentTarget);
     } else if (item.path) {
-      // If leaf item, navigate immediately
-      closeMenu?.();
+      // For leaf items, navigate then close all menus
+      navigate(item.path);
+      closeAllMenus();
     }
   };
 
@@ -90,28 +107,51 @@ const NestedMenuItem: React.FC<NestedMenuItemProps> = ({
     setAnchorEl(null);
   };
 
+  // Positioning: top-level items drop down; nested submenus open to the right.
+  const menuAnchorOrigin: PopoverOrigin =
+    level === 0
+      ? { vertical: "bottom", horizontal: "left" }
+      : { vertical: "top", horizontal: "right" };
+
+  const menuTransformOrigin: PopoverOrigin = {
+    vertical: "top",
+    horizontal: "left",
+  };
+
+  // Consistent styling for menu items
+  const menuItemStyle = {
+    pr: item.subMenu ? 4 : 0,
+    width: 200,
+    whiteSpace: "normal",
+    wordWrap: "break-word",
+    border: "1px solid",
+    borderColor: "divider",
+    boxSizing: "border-box",
+  };
+
   return (
     <>
-      <MenuItem onClick={handleOpen} sx={{ pr: item.subMenu ? 4 : 2 }}>
+      <MenuItem onClick={handleOpen} sx={menuItemStyle}>
         {item.label}
         {item.subMenu && item.subMenu.length > 0 && (
           <ExpandMore fontSize="small" sx={{ ml: "auto" }} />
         )}
       </MenuItem>
 
-      {/* Child sub-menu */}
       {item.subMenu && (
         <MuiMenu
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
           onClose={handleClose}
-          anchorOrigin={{
-            vertical: "top",
-            horizontal: "right",
-          }}
-          transformOrigin={{
-            vertical: "top",
-            horizontal: "left",
+          anchorOrigin={menuAnchorOrigin}
+          transformOrigin={menuTransformOrigin}
+          disablePortal
+          PaperProps={{
+            sx: {
+              width: 200,
+              border: "1px solid",
+              borderColor: "divider",
+            },
           }}
         >
           {item.subMenu.map((child, idx) => (
@@ -120,7 +160,8 @@ const NestedMenuItem: React.FC<NestedMenuItemProps> = ({
               item={child}
               roles={roles}
               level={level + 1}
-              closeMenu={closeMenu}
+              closeAllMenus={closeAllMenus}
+              closeSignal={closeSignal}
             />
           ))}
         </MuiMenu>
@@ -133,49 +174,59 @@ const Menu: React.FC = () => {
   const { isAuthenticated, roles, logout } = useAuthContext();
   const navigate = useNavigate();
   const theme = useTheme();
-
-  // We might put the entire top-level menu inside a single MUI "Menu"
-  // or we can just show them as Buttons + subMenus.
-  // Let's do a simpler approach: a row of top-level items that open subMenus.
-
-  // Paler version of primary color:
   const palePrimary = alpha(theme.palette.primary.main, 0.15);
+
+  // A signal counter to tell all menu items to close.
+  const [closeSignal, setCloseSignal] = useState(0);
+  const closeAllMenus = () => setCloseSignal((prev) => prev + 1);
 
   const handleLogout = () => {
     logout();
     navigate("/login");
+    closeAllMenus();
   };
 
   return (
-    <Paper
-      elevation={1}
-      square
-      sx={{
-        backgroundColor: palePrimary,
-      }}
-    >
-      <Toolbar sx={{ justifyContent: "space-between" }}>
-        {/* Left side: top-level items, each of which might have a subMenu */}
-        <Box sx={{ display: "flex", gap: 2 }}>
-          {menuItems.map((item, idx) => {
-            if (!isAuthenticated) {
-              // If not logged in, skip items that require roles
-              // or show public items only. (This is optional logic)
-              return null;
-            }
-            // We'll treat top-level items as nested items with closeMenu stub
-            return <NestedMenuItem key={idx} item={item} roles={roles} />;
-          })}
-        </Box>
+    <ClickAwayListener onClickAway={closeAllMenus}>
+      <Paper
+        elevation={1}
+        square
+        sx={{
+          backgroundColor: palePrimary,
+        }}
+      >
+        <Toolbar sx={{ justifyContent: "space-between" }}>
+          {/* Left side: top-level menu items */}
+          <Box sx={{ display: "flex", gap: 2 }}>
+            {menuItems.map((item, idx) => {
+              if (!isAuthenticated) {
+                return null;
+              }
+              return (
+                <NestedMenuItem
+                  key={idx}
+                  item={item}
+                  roles={roles}
+                  closeAllMenus={closeAllMenus}
+                  closeSignal={closeSignal}
+                />
+              );
+            })}
+          </Box>
 
-        {/* Right side: show Logout if authenticated */}
-        {isAuthenticated && (
-          <Button color="secondary" variant="contained" onClick={handleLogout}>
-            Logout
-          </Button>
-        )}
-      </Toolbar>
-    </Paper>
+          {/* Right side: Logout button */}
+          {isAuthenticated && (
+            <Button
+              color="secondary"
+              variant="contained"
+              onClick={handleLogout}
+            >
+              Logout
+            </Button>
+          )}
+        </Toolbar>
+      </Paper>
+    </ClickAwayListener>
   );
 };
 
