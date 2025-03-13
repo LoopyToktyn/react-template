@@ -1,4 +1,4 @@
-import React, { useState, FormEvent } from "react";
+import React, { useState, useEffect, FormEvent } from "react";
 import { useAuthContext } from "@context/AuthContext";
 import {
   Box,
@@ -8,23 +8,48 @@ import {
   Paper,
   Divider,
   Alert,
+  FormControlLabel,
+  Checkbox,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
+
+export const DEFAULT_LANDING_PAGE = "/example";
 
 const LoginPage: React.FC = () => {
   const { login, isAuthenticated } = useAuthContext();
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
+
+  if (isAuthenticated) {
+    // User is already authenticated so redirect them to the default landing page
+    return <Navigate to={DEFAULT_LANDING_PAGE} replace />;
+  }
+
+  // Load the remembered username from localStorage on mount
+  useEffect(() => {
+    const savedUsername = localStorage.getItem("rememberedUsername");
+    if (savedUsername) {
+      setUsername(savedUsername);
+      setRememberMe(true); // Automatically check the box if we have a saved username
+    }
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
     try {
       await login(username, password);
-      // After successful login, navigate to /dashboard or wherever
-      navigate("/example");
+
+      if (rememberMe) {
+        localStorage.setItem("rememberedUsername", username);
+      } else {
+        localStorage.removeItem("rememberedUsername");
+      }
+
+      navigate(DEFAULT_LANDING_PAGE);
     } catch (err: any) {
       setError(err.message || "Login failed");
     }
@@ -67,6 +92,16 @@ const LoginPage: React.FC = () => {
             margin="normal"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+          />
+
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
+            }
+            label="Remember Me"
           />
 
           <Button

@@ -1,9 +1,13 @@
-import React, { createContext, useMemo, useState, useContext } from "react";
+import React, {
+  createContext,
+  useMemo,
+  useState,
+  useContext,
+  useEffect,
+} from "react";
 import { ThemeProvider, Theme } from "@mui/material/styles";
 import { CssBaseline } from "@mui/material";
 import createTheme from "@root/theme";
-
-// Add anything else you want in the theme: custom palette, shape, etc.
 
 interface ColorModeContextType {
   mode: "light" | "dark";
@@ -18,7 +22,15 @@ export const ColorModeContext = createContext<ColorModeContextType>({
 export const ColorModeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [mode, setMode] = useState<"light" | "dark">("dark");
+  const getInitialMode = (): "light" | "dark" => {
+    return (localStorage.getItem("color-mode") as "light" | "dark") || "dark";
+  };
+
+  const [mode, setMode] = useState<"light" | "dark">(getInitialMode);
+
+  useEffect(() => {
+    localStorage.setItem("color-mode", mode);
+  }, [mode]);
 
   const colorMode = useMemo(
     () => ({
