@@ -14,59 +14,10 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "@context/AuthContext";
 import { ExpandMore } from "@mui/icons-material";
+import { menuItems } from "@config/menuConfig";
+import { MenuItemConfig, NestedMenuItemProps } from "@root/types";
 
 // Define the nested menu structure
-interface MenuItemConfig {
-  label: string;
-  path?: string; // only for leaf items
-  allowedRoles?: string[];
-  subMenu?: MenuItemConfig[];
-}
-
-const menuItems: MenuItemConfig[] = [
-  {
-    label: "Example",
-    path: "/example",
-    allowedRoles: [],
-  },
-  {
-    label: "Reports",
-    allowedRoles: [],
-    subMenu: [
-      {
-        label: "Monthly",
-        path: "/reports/monthly",
-        subMenu: [
-          {
-            label: "Monthly",
-            path: "/reports/monthly",
-          },
-          {
-            label: "Yearly",
-            path: "/reports/yearly",
-          },
-        ],
-      },
-      {
-        label: "Yearly",
-        path: "/reports/yearly",
-      },
-    ],
-  },
-  {
-    label: "Dashboard",
-    path: "/dashboard",
-    allowedRoles: ["USER"],
-  },
-];
-
-interface NestedMenuItemProps {
-  item: MenuItemConfig;
-  roles: string[];
-  level?: number;
-  closeAllMenus: () => void;
-  closeSignal: number;
-}
 
 const NestedMenuItem: React.FC<NestedMenuItemProps> = ({
   item,
