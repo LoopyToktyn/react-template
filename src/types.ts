@@ -80,6 +80,7 @@ export interface FieldConfig {
   label: string;
   type: FieldType;
   // For fields like radio, select, multiselect
+  columns?: { key: string; label: string }[];
   options?: Option[];
   // Layout options: if using a grid system (e.g., MUI Grid)
   grid?: {

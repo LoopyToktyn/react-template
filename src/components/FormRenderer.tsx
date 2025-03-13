@@ -19,6 +19,7 @@ import {
   FormLabel,
 } from "@mui/material";
 import { FormConfigDictionary, LayoutConfig } from "@root/types";
+import ListField from "@components/ListField";
 
 interface FormRendererProps {
   formConfig: FormConfigDictionary;
@@ -151,29 +152,12 @@ const FormRenderer: React.FC<FormRendererProps> = ({
         );
       case "list":
         return (
-          <div>
-            <InputLabel>{field.label}</InputLabel>
-            {Array.isArray(value) &&
-              value.map((item: any, index: number) => (
-                <TextField
-                  key={`${field.name}-${index}`}
-                  value={item}
-                  onChange={(e) => {
-                    const updatedList = [...value];
-                    updatedList[index] = e.target.value;
-                    onFieldChange(field.name, updatedList);
-                  }}
-                  fullWidth
-                  margin="normal"
-                />
-              ))}
-            <button
-              type="button"
-              onClick={() => onFieldChange(field.name, [...(value || []), ""])}
-            >
-              Add Item
-            </button>
-          </div>
+          <ListField
+            label={field.label}
+            value={value || []}
+            onChange={(newValue) => onFieldChange(field.name, newValue)}
+            columns={field.columns} // optional, if you store column config in field.columns
+          />
         );
       case "composite":
         return field.customRender ? (

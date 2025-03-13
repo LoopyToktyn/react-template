@@ -124,6 +124,11 @@ const formConfig: FormConfigDictionary = {
     name: "addresses",
     label: "Addresses",
     type: "list",
+    columns: [
+      { key: "street", label: "Street" },
+      { key: "city", label: "City" },
+      { key: "zip", label: "ZIP Code" },
+    ],
   },
   customData: {
     name: "customData",
@@ -161,31 +166,22 @@ const formConfig: FormConfigDictionary = {
 const exampleLayout: LayoutConfig = {
   rows: [
     {
-      // ROW #1
-      gridProps: {
-        spacing: 2, // Container-level prop for spacing
-        // You could also include justifyContent, alignItems, etc.
-        // e.g., justifyContent: "space-between"
-      },
+      // ROW #1 - Basic Info
+      gridProps: { spacing: 2 },
       columns: [
         {
-          // COLUMN #1
           fields: ["name", "email"],
-          // item-based props
           gridProps: { xs: 12, sm: 6 },
         },
         {
-          // COLUMN #2
           fields: ["gender", "subscribe"],
           gridProps: { xs: 12, sm: 6 },
         },
       ],
     },
     {
-      // ROW #2
-      gridProps: {
-        spacing: 2,
-      },
+      // ROW #2 - Description
+      gridProps: { spacing: 2 },
       columns: [
         {
           fields: ["description"],
@@ -194,27 +190,84 @@ const exampleLayout: LayoutConfig = {
       ],
     },
     {
-      // ROW #3
-      gridProps: {
-        spacing: 2,
-      },
+      // ROW #3 - Country & Skills
+      gridProps: { spacing: 2 },
       columns: [
         {
+          fields: ["country"],
+          gridProps: { xs: 12, sm: 6 },
+        },
+        {
+          fields: ["skills"],
+          gridProps: { xs: 12, sm: 6 },
+        },
+      ],
+    },
+    {
+      // ROW #4 - Addresses
+      gridProps: { spacing: 2 },
+      columns: [
+        {
+          fields: ["addresses"],
+          gridProps: { xs: 12 },
+        },
+      ],
+    },
+    {
+      // ROW #5 - Custom Composite Field
+      gridProps: { spacing: 2 },
+      columns: [
+        {
+          fields: ["customData"],
+          gridProps: { xs: 12 },
+        },
+      ],
+    },
+    {
+      // ROW #4
+      gridProps: { spacing: 2 },
+      columns: [
+        {
+          // This column has a sub-layout nested inside
           subLayout: {
             rows: [
               {
-                // Nested row
-                gridProps: {
-                  spacing: 2,
-                },
+                gridProps: { spacing: 2 },
                 columns: [
-                  { fields: ["country"], gridProps: { xs: 12, sm: 6 } },
-                  { fields: ["skills"], gridProps: { xs: 12, sm: 6 } },
+                  {
+                    fields: ["addresses"], // Our "list" field
+                    gridProps: { xs: 12 },
+                  },
+                  {
+                    fields: ["customData"],
+                    gridProps: { xs: 12 },
+                  },
                 ],
               },
             ],
           },
-          gridProps: { xs: 12 },
+          gridProps: { xs: 6 },
+        },
+        {
+          // This column has a sub-layout nested inside
+          subLayout: {
+            rows: [
+              {
+                gridProps: { spacing: 2 },
+                columns: [
+                  {
+                    fields: ["addresses"], // Our "list" field
+                    gridProps: { xs: 12 },
+                  },
+                  {
+                    fields: ["customData"],
+                    gridProps: { xs: 12 },
+                  },
+                ],
+              },
+            ],
+          },
+          gridProps: { xs: 6 },
         },
       ],
     },
