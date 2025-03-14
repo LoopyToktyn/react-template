@@ -13,21 +13,16 @@ import {
   useTheme,
 } from "@mui/material";
 
-/** Sorting direction cycles: asc -> desc -> none -> asc */
+/** Possible sorting directions (including 'none' to disable). */
 type SortDirection = "asc" | "desc" | "none";
 
 /**
- * TableColumn definition with full recursion support:
- * - `header`: label in the header cell
- * - `field`: string path for sorting (e.g. "person.name.first")
- * - `subColumns`: child columns
- * - `width`: optional fixed width
- * - `customRender`: optional custom cell rendering
+ * Defines a column in the table. Supports nesting via `subColumns`.
  */
 export interface TableColumn<T> {
   header: string;
   field?: string; // For sorting or direct display
-  subColumns?: TableColumn<T>[];
+  subColumns?: TableColumn<T>[]; // Nested columns
   width?: string; // e.g. "100px" or "20%"
   customRender?: (item: T) => React.ReactNode;
 }
@@ -40,10 +35,7 @@ export interface SearchTableProps<T> {
   rowsPerPage?: number;
 }
 
-/**
- * Safely get a nested property from an object by string path,
- * e.g. getNestedValue(record, "person.name.first")
- */
+/** Safely retrieve a nested property (e.g. "person.name.first"). */
 function getNestedValue(obj: any, path?: string): any {
   if (!path) return undefined;
   return path.split(".").reduce((acc, key) => {
@@ -54,7 +46,7 @@ function getNestedValue(obj: any, path?: string): any {
   }, obj);
 }
 
-/** Count the total number of "leaf" columns under a given column. */
+/** Recursively count how many "leaf" columns a column contains. */
 function countLeafColumns<T>(col: TableColumn<T>): number {
   if (!col.subColumns || col.subColumns.length === 0) return 1;
   return col.subColumns.reduce(
@@ -63,25 +55,18 @@ function countLeafColumns<T>(col: TableColumn<T>): number {
   );
 }
 
-/**
- * Determine the maximum depth of the entire columns structure.
- * e.g. if you have 3 levels (header → sub → sub), maxDepth = 3.
- */
+/** Compute the maximum depth of nested columns. */
 function getMaxDepth<T>(columns: TableColumn<T>[]): number {
   let depth = 1;
   for (const col of columns) {
     if (col.subColumns && col.subColumns.length > 0) {
-      const subDepth = 1 + getMaxDepth(col.subColumns);
-      depth = Math.max(depth, subDepth);
+      depth = Math.max(depth, 1 + getMaxDepth(col.subColumns));
     }
   }
   return depth;
 }
 
-/**
- * Flatten all subColumns into an array of "leaf" columns (no children).
- * This is for rendering body cells in a single row.
- */
+/** Flatten nested columns into an array of leaves for rendering body cells. */
 function flattenColumns<T>(columns: TableColumn<T>[]): TableColumn<T>[] {
   return columns.flatMap((col) =>
     col.subColumns && col.subColumns.length > 0
@@ -91,9 +76,11 @@ function flattenColumns<T>(columns: TableColumn<T>[]): TableColumn<T>[] {
 }
 
 /**
- * The main SearchTable with multi-level headers using rowSpan & colSpan:
- * - RowSpan for columns with no children (leaves)
- * - ColSpan for columns with children
+ * A reusable table component with:
+ * - Nested (multi-level) headers
+ * - Sorting (with asc/desc/none states)
+ * - Pagination
+ * - Automatic horizontal scroll when columns are wide
  */
 export function SearchTable<T extends object>({
   columns,
@@ -116,47 +103,43 @@ export function SearchTable<T extends object>({
   const [page, setPage] = useState(0);
   const [perPage, setPerPage] = useState(rowsPerPage);
 
-  // Pre-calculate total depth for rowSpan logic
+  // Calculate total depth for rowSpan logic
   const totalDepth = useMemo(() => getMaxDepth(columns), [columns]);
 
-  // Build table header rows. We'll store them in an array of arrays of <TableCell> elements.
-  const buildHeader = (
+  /**
+   * Build table header cells for a given level of columns.
+   * - If a column has children, it gets colSpan = # of leaves, rowSpan = 1
+   * - Leaf columns get rowSpan = remaining depth
+   */
+  function buildHeaderRow(
     cols: TableColumn<T>[],
     level: number
-  ): JSX.Element[] => {
-    const rowCells: JSX.Element[] = [];
-
-    cols.forEach((col) => {
+  ): JSX.Element[] {
+    return cols.map((col) => {
       const leafCount = countLeafColumns(col);
-      const hasChildren = col.subColumns && col.subColumns.length > 0;
+      const hasChildren = !!col.subColumns?.length;
       const isSortable = !!col.field;
 
-      // If it's a leaf, rowSpan is the remaining levels
       const rowSpan = hasChildren ? 1 : totalDepth - level;
       const colSpan = hasChildren ? leafCount : 1;
 
-      // Check if this column is actively sorted
       const isActiveSort =
         col.field && col.field === sortField && sortDirection !== "none";
 
-      const nextDirection = isActiveSort ? sortDirection : "asc"; // if not sorted, default to "asc"
-
-      // Sorting click handler
+      // Determine next direction in the cycle asc -> desc -> none -> asc
       const handleSortClick = () => {
         if (!col.field) return;
         if (sortField !== col.field) {
-          // start sorting by this new field ascending
           setSortField(col.field);
           setSortDirection("asc");
         } else {
-          // cycle asc -> desc -> none -> asc
           if (sortDirection === "asc") setSortDirection("desc");
           else if (sortDirection === "desc") setSortDirection("none");
-          else if (sortDirection === "none") setSortDirection("asc");
+          else setSortDirection("asc");
         }
       };
 
-      rowCells.push(
+      return (
         <TableCell
           key={`${col.header}-${level}`}
           align="left"
@@ -164,17 +147,16 @@ export function SearchTable<T extends object>({
           rowSpan={rowSpan}
           sx={{
             width: col.width || "auto",
-            borderBottom: `2px solid ${theme.palette.divider}`,
             fontWeight: 600,
+            verticalAlign: rowSpan > 1 ? "bottom" : "middle",
+            borderBottom: `2px solid ${theme.palette.divider}`,
           }}
         >
           {isSortable ? (
             <TableSortLabel
               active={isActiveSort as any}
               direction={
-                nextDirection === undefined
-                  ? "asc"
-                  : (nextDirection as "asc" | "desc")
+                isActiveSort ? (sortDirection as "asc" | "desc") : "asc"
               }
               onClick={handleSortClick}
             >
@@ -186,53 +168,45 @@ export function SearchTable<T extends object>({
         </TableCell>
       );
     });
+  }
 
-    return rowCells;
-  };
-
-  // We'll recursively build an array-of-arrays for each row level
+  // Recursively build each row of the header
   const headerRows: JSX.Element[][] = [];
   function recurseHeaders(cols: TableColumn<T>[], level: number) {
-    // Build the row for this level
-    const row = buildHeader(cols, level);
-    headerRows[level] = headerRows[level]
-      ? [...headerRows[level], ...row]
-      : row;
+    const rowCells = buildHeaderRow(cols, level);
+    if (!headerRows[level]) headerRows[level] = [];
+    headerRows[level].push(...rowCells);
 
-    // For each column that has children, we go one level deeper
+    // Recurse for children
     cols.forEach((col) => {
       if (col.subColumns && col.subColumns.length > 0) {
         recurseHeaders(col.subColumns, level + 1);
       }
     });
   }
-
-  // Build the multi-level headers
   recurseHeaders(columns, 0);
 
   // Flatten columns for body cells
   const leafColumns = useMemo(() => flattenColumns(columns), [columns]);
 
-  // Sorting
+  // Sort data if a field and direction are set
   const sortedData = useMemo(() => {
     if (!sortField || sortDirection === "none") return data;
-    const sorted = [...data].sort((a, b) => {
+    const copy = [...data];
+    copy.sort((a, b) => {
       const valA = getNestedValue(a, sortField);
       const valB = getNestedValue(b, sortField);
       if (valA < valB) return sortDirection === "asc" ? -1 : 1;
       if (valA > valB) return sortDirection === "asc" ? 1 : -1;
       return 0;
     });
-    return sorted;
+    return copy;
   }, [data, sortField, sortDirection]);
 
-  // Pagination
-  const handleChangePage = (event: unknown, newPage: number) =>
-    setPage(newPage);
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setPerPage(parseInt(event.target.value, 10));
+  // Handle pagination
+  const handleChangePage = (_: unknown, newPage: number) => setPage(newPage);
+  const handleChangeRowsPerPage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPerPage(parseInt(e.target.value, 10));
     setPage(0);
   };
 
@@ -241,19 +215,18 @@ export function SearchTable<T extends object>({
     return sortedData.slice(start, start + perPage);
   }, [page, perPage, sortedData]);
 
-  // Striped row background
-  const getRowStyle = (index: number) => {
-    // Use theme.palette.action.hover for alternate row color
-    return index % 2 === 1
-      ? { backgroundColor: theme.palette.action.hover }
-      : {};
-  };
+  // Simple alternating row style
+  const getRowStyle = (index: number) =>
+    index % 2 === 1 ? { backgroundColor: theme.palette.action.hover } : {};
 
   return (
     <Box sx={{ width: "100%" }}>
       <TableContainer
         component={Paper}
         sx={{
+          // Force horizontal scrolling
+          overflowX: "auto",
+          maxWidth: "100%",
           "& .MuiTableCell-root": {
             py: 1.2,
             px: 1.5,
@@ -261,7 +234,15 @@ export function SearchTable<T extends object>({
           },
         }}
       >
-        <Table size="small">
+        <Table
+          size="small"
+          sx={{
+            // Let the columns expand as needed, no wrapping
+            tableLayout: "auto",
+            minWidth: "max-content",
+            whiteSpace: "nowrap",
+          }}
+        >
           <TableHead>
             {headerRows.map((cells, rowIndex) => (
               <TableRow
@@ -275,17 +256,17 @@ export function SearchTable<T extends object>({
           <TableBody>
             {pagedData.map((item, rowIndex) => (
               <TableRow key={rowIndex} sx={getRowStyle(rowIndex)}>
-                {leafColumns.map((leaf, colIndex) => {
-                  const rawValue = leaf.field
-                    ? getNestedValue(item, leaf.field)
-                    : undefined;
+                {leafColumns.map((col, colIndex) => {
+                  const rawValue = col.field
+                    ? getNestedValue(item, col.field)
+                    : "";
                   return (
                     <TableCell
                       key={colIndex}
-                      sx={{ width: leaf.width || "auto" }}
+                      sx={{ width: col.width || "auto" }}
                     >
-                      {leaf.customRender
-                        ? leaf.customRender(item)
+                      {col.customRender
+                        ? col.customRender(item)
                         : String(rawValue ?? "")}
                     </TableCell>
                   );

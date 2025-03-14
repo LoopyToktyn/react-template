@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Container,
@@ -6,8 +6,9 @@ import {
   Button,
   Avatar,
   Checkbox,
+  FormControlLabel,
+  TextField,
 } from "@mui/material";
-import { FormControlLabel, TextField } from "@mui/material";
 import { SearchTable, TableColumn } from "@components/SearchTable";
 
 /** User's search criteria: can expand as needed. */
@@ -54,7 +55,7 @@ interface PersonRecord {
     favorite: boolean;
     admin: boolean;
   };
-  active: boolean; // used for "showActive" filter
+  active: boolean;
 }
 
 // -------------------------
@@ -111,14 +112,8 @@ const SearchForm: React.FC<SearchFormProps> = ({
   );
 };
 
-// -------------------------
-// 4) The “SearchTable” with multi-level headers, recursion, sorting, pagination
-
-// -------------------------
-// 5) “Fetch” function that returns complicated data
-//    In a real app, you'd call an API; here we simulate various sub-fields.
-
-function dummyFetchSearchResults(
+// Simulate fetching data from an API
+async function dummyFetchSearchResults(
   criteria: SearchCriteria
 ): Promise<PersonRecord[]> {
   return new Promise((resolve) => {
@@ -300,14 +295,8 @@ const complicatedColumns: TableColumn<PersonRecord>[] = [
       {
         header: "Phone",
         subColumns: [
-          {
-            header: "Number",
-            field: "contact.phone.number",
-          },
-          {
-            header: "Ext",
-            field: "contact.phone.ext",
-          },
+          { header: "Number", field: "contact.phone.number" },
+          { header: "Ext", field: "contact.phone.ext" },
         ],
       },
       {
@@ -411,7 +400,7 @@ const complicatedColumns: TableColumn<PersonRecord>[] = [
 ];
 
 // -------------------------
-// 7) The main “SearchPage” component
+// The main “SearchPage” component
 
 export default function ExampleSearchPage() {
   const [criteria, setCriteria] = useState<SearchCriteria>({});
@@ -422,7 +411,7 @@ export default function ExampleSearchPage() {
     setResults(data);
   };
 
-  // On page load, do an initial search
+  // On mount, do an initial search
   useEffect(() => {
     handleSearch();
     // eslint-disable-next-line
@@ -434,21 +423,19 @@ export default function ExampleSearchPage() {
         Complicated Search + Table Example
       </Typography>
 
-      {/* Our Search Form */}
       <SearchForm
         criteria={criteria}
         onChange={setCriteria}
         onSearch={handleSearch}
       />
 
-      {/* Results Table */}
       {results.length > 0 ? (
         <SearchTable<PersonRecord>
           columns={complicatedColumns}
           data={results}
           defaultSortField="id"
           defaultSortDirection="asc"
-          rowsPerPage={10} // Just to show more paging
+          rowsPerPage={10}
         />
       ) : (
         <Typography variant="body2" color="text.secondary">
