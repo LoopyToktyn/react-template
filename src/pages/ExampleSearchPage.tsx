@@ -1,125 +1,309 @@
-import React, { useState, useEffect } from "react";
-import {
-  Box,
-  Container,
-  Typography,
-  Button,
-  Avatar,
-  Checkbox,
-  FormControlLabel,
-  TextField,
-} from "@mui/material";
-import { SearchTable, TableColumn } from "@components/SearchTable";
-import ExampleSearchForm from "@root/components/ExampleSearchForm";
+// ExampleSearchPage.tsx
+import React, { useState } from "react";
+import { Box, Container, TextField, Typography } from "@mui/material";
+import { Table, TableColumn } from "@root/components/Table";
+import { SearchForm } from "@components/SearchForm";
+import { FormConfigDictionary } from "@root/types";
 
-/** User's search criteria: can expand as needed. */
-interface SearchCriteria {
+// ----------------------------------------------------------------------
+// Define your interfaces (using the ones from ExampleSearchForm as a guide)
+export interface SearchCriteria {
   textQuery?: string;
   showActive?: boolean;
+  category?: string;
+  sortOrder?: string;
+  tags?: string[];
+  dateRange?: {
+    startDate?: string;
+    endDate?: string;
+  };
+  advancedOptions?: {
+    minValue?: number;
+    maxValue?: number;
+  };
 }
 
-/**
- * We'll define a type for the complicated data. This is for
- * demonstration only, so each record has lots of nested
- * fields that will produce multi-level headers.
- */
-interface PersonRecord {
+export interface PersonRecord {
   id: number;
   person: {
-    name: {
-      first: string;
-      last: string;
-    };
+    name: { first: string; last: string };
     gender: string;
   };
   contact: {
     email: string;
-    phone: {
-      number: string;
-      ext?: string;
-    };
+    phone: { number: string; ext?: string };
     preferred: boolean;
   };
   address: {
-    street: {
-      line1: string;
-      line2?: string;
-    };
+    street: { line1: string; line2?: string };
     city: string;
     state: string;
   };
   actions: {
-    profile: {
-      avatarUrl: string;
-      link: string;
-    };
+    profile: { avatarUrl: string; link: string };
     favorite: boolean;
     admin: boolean;
   };
   active: boolean;
 }
 
-// -------------------------
-// 2) Example “SearchForm” (simplified, config-driven)
+// ----------------------------------------------------------------------
+// Dummy search function (mirroring the logic in your ExampleSearchForm)
+const dummyFetchSearchResults = async (
+  criteria: SearchCriteria
+): Promise<PersonRecord[]> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const records: PersonRecord[] = [
+        {
+          id: 101,
+          person: { name: { first: "Alice", last: "Doe" }, gender: "Female" },
+          contact: {
+            email: "alice@example.com",
+            phone: { number: "(555) 111-2222", ext: "123" },
+            preferred: true,
+          },
+          address: {
+            street: { line1: "123 Oak St", line2: "Apt 2B" },
+            city: "Springfield",
+            state: "IL",
+          },
+          actions: {
+            profile: {
+              avatarUrl: "https://i.pravatar.cc/60?u=alice",
+              link: "https://example.com/users/101",
+            },
+            favorite: true,
+            admin: false,
+          },
+          active: true,
+        },
+        {
+          id: 102,
+          person: { name: { first: "Bob", last: "Smith" }, gender: "Male" },
+          contact: {
+            email: "bob.smith@foo.org",
+            phone: { number: "(555) 333-4444" },
+            preferred: false,
+          },
+          address: {
+            street: { line1: "42 Main St" },
+            city: "Somewhere",
+            state: "CA",
+          },
+          actions: {
+            profile: {
+              avatarUrl: "https://i.pravatar.cc/60?u=bob",
+              link: "https://example.com/users/102",
+            },
+            favorite: false,
+            admin: true,
+          },
+          active: false,
+        },
+        {
+          id: 103,
+          person: {
+            name: { first: "Charlie", last: "Jones" },
+            gender: "Nonbinary",
+          },
+          contact: {
+            email: "charlie@bar.net",
+            phone: { number: "(555) 666-7777" },
+            preferred: false,
+          },
+          address: {
+            street: { line1: "789 Pine Rd" },
+            city: "Metropolis",
+            state: "NY",
+          },
+          actions: {
+            profile: {
+              avatarUrl: "https://i.pravatar.cc/60?u=charlie",
+              link: "https://example.com/users/103",
+            },
+            favorite: false,
+            admin: false,
+          },
+          active: true,
+        },
+      ];
 
-interface SearchFormProps {
-  criteria: SearchCriteria;
-  onChange: (criteria: SearchCriteria) => void;
-  onSearch: () => void;
-}
-
-const SearchForm: React.FC<SearchFormProps> = ({
-  criteria,
-  onChange,
-  onSearch,
-}) => {
-  return (
-    <Box
-      sx={{
-        display: "flex",
-        gap: 2,
-        mb: 2,
-        alignItems: "flex-end",
-        flexWrap: "wrap",
-      }}
-    >
-      <Box>
-        <Typography variant="body2">Search Query</Typography>
-        <TextField
-          size="small"
-          value={criteria.textQuery ?? ""}
-          onChange={(e) => onChange({ ...criteria, textQuery: e.target.value })}
-        />
-      </Box>
-      <Box>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={criteria.showActive ?? false}
-              onChange={(e) =>
-                onChange({ ...criteria, showActive: e.target.checked })
-              }
-            />
-          }
-          label="Show Active Only"
-        />
-      </Box>
-      <Box>
-        <Button variant="contained" onClick={onSearch}>
-          Search
-        </Button>
-      </Box>
-    </Box>
-  );
+      let filtered = records;
+      if (criteria.textQuery) {
+        const q = criteria.textQuery.toLowerCase();
+        filtered = filtered.filter(
+          (r) =>
+            r.person.name.first.toLowerCase().includes(q) ||
+            r.person.name.last.toLowerCase().includes(q) ||
+            r.contact.email.toLowerCase().includes(q)
+        );
+      }
+      if (criteria.showActive) {
+        filtered = filtered.filter((r) => r.active);
+      }
+      resolve(filtered);
+    }, 750);
+  });
 };
 
-// -------------------------
-// 6) Example Table Columns with multi-level subColumns & custom cells
+// ----------------------------------------------------------------------
+// Form configuration and layout (adapted from ExampleSearchForm.tsx)
+const formConfig: FormConfigDictionary = {
+  textQuery: {
+    name: "textQuery",
+    label: "Search Query",
+    type: "text",
+  },
+  showActive: {
+    name: "showActive",
+    label: "Show Active Only",
+    type: "checkbox",
+  },
+  category: {
+    name: "category",
+    label: "Category",
+    type: "select",
+    options: [
+      { label: "All", value: "all" },
+      { label: "Category A", value: "a" },
+      { label: "Category B", value: "b" },
+      { label: "Category C", value: "c" },
+    ],
+  },
+  sortOrder: {
+    name: "sortOrder",
+    label: "Sort Order",
+    type: "radio",
+    options: [
+      { label: "Ascending", value: "asc" },
+      { label: "Descending", value: "desc" },
+    ],
+  },
+  tags: {
+    name: "tags",
+    label: "Tags",
+    type: "multiselect",
+    options: [
+      { label: "React", value: "react" },
+      { label: "JavaScript", value: "javascript" },
+      { label: "TypeScript", value: "typescript" },
+      { label: "CSS", value: "css" },
+    ],
+  },
+  dateRange: {
+    name: "dateRange",
+    label: "Date Range",
+    type: "composite",
+    customRender: (value, onChange, error) => (
+      <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+        <TextField
+          label="Start Date"
+          type="date"
+          value={value?.startDate || ""}
+          onChange={(e) => onChange({ ...value, startDate: e.target.value })}
+          InputLabelProps={{ shrink: true }}
+        />
+        <TextField
+          label="End Date"
+          type="date"
+          value={value?.endDate || ""}
+          onChange={(e) => onChange({ ...value, endDate: e.target.value })}
+          InputLabelProps={{ shrink: true }}
+        />
+      </Box>
+    ),
+  },
+  advancedOptions: {
+    name: "advancedOptions",
+    label: "Advanced Options",
+    type: "composite",
+    customRender: (value, onChange, error) => (
+      <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+        <TextField
+          label="Min Value"
+          type="number"
+          value={value?.minValue || ""}
+          onChange={(e) =>
+            onChange({ ...value, minValue: Number(e.target.value) })
+          }
+        />
+        <TextField
+          label="Max Value"
+          type="number"
+          value={value?.maxValue || ""}
+          onChange={(e) =>
+            onChange({ ...value, maxValue: Number(e.target.value) })
+          }
+        />
+      </Box>
+    ),
+  },
+};
 
+const layoutConfig = {
+  rows: [
+    {
+      gridProps: { spacing: 2 },
+      columns: [
+        {
+          fields: ["textQuery", "category"],
+          gridProps: { xs: 12, sm: 6 },
+        },
+        {
+          fields: ["showActive", "sortOrder"],
+          gridProps: { xs: 12, sm: 6 },
+        },
+      ],
+    },
+    {
+      gridProps: { spacing: 2 },
+      columns: [
+        {
+          fields: ["tags"],
+          gridProps: { xs: 12 },
+        },
+      ],
+    },
+    {
+      gridProps: { spacing: 2 },
+      columns: [
+        {
+          fields: ["dateRange"],
+          gridProps: { xs: 12 },
+        },
+      ],
+    },
+    {
+      gridProps: { spacing: 2 },
+      columns: [
+        {
+          subLayout: {
+            rows: [
+              {
+                gridProps: { spacing: 2 },
+                columns: [
+                  {
+                    fields: ["advancedOptions"],
+                    gridProps: { xs: 12 },
+                  },
+                ],
+              },
+            ],
+          },
+          gridProps: { xs: 12 },
+        },
+      ],
+    },
+  ],
+};
+
+// ----------------------------------------------------------------------
+// Table columns (reuse from your ExampleSearchPage.tsx)
 const complicatedColumns: TableColumn<PersonRecord>[] = [
   {
     header: "ID",
-    field: "id", // used for sorting
+    field: "id",
   },
   {
     header: "Person",
@@ -127,14 +311,8 @@ const complicatedColumns: TableColumn<PersonRecord>[] = [
       {
         header: "Name",
         subColumns: [
-          {
-            header: "First",
-            field: "person.name.first",
-          },
-          {
-            header: "Last",
-            field: "person.name.last",
-          },
+          { header: "First", field: "person.name.first" },
+          { header: "Last", field: "person.name.last" },
         ],
       },
       {
@@ -167,12 +345,7 @@ const complicatedColumns: TableColumn<PersonRecord>[] = [
         header: "Preferred?",
         field: "contact.preferred",
         customRender: (item) => (
-          <Checkbox
-            readOnly
-            disabled
-            checked={item.contact.preferred}
-            size="small"
-          />
+          <input type="checkbox" readOnly checked={item.contact.preferred} />
         ),
       },
     ],
@@ -183,24 +356,12 @@ const complicatedColumns: TableColumn<PersonRecord>[] = [
       {
         header: "Street",
         subColumns: [
-          {
-            header: "Line 1",
-            field: "address.street.line1",
-          },
-          {
-            header: "Line 2",
-            field: "address.street.line2",
-          },
+          { header: "Line 1", field: "address.street.line1" },
+          { header: "Line 2", field: "address.street.line2" },
         ],
       },
-      {
-        header: "City",
-        field: "address.city",
-      },
-      {
-        header: "State",
-        field: "address.state",
-      },
+      { header: "City", field: "address.city" },
+      { header: "State", field: "address.state" },
     ],
   },
   {
@@ -212,10 +373,10 @@ const complicatedColumns: TableColumn<PersonRecord>[] = [
           {
             header: "Avatar",
             customRender: (item) => (
-              <Avatar
+              <img
                 alt={item.person.name.first}
                 src={item.actions.profile.avatarUrl}
-                sx={{ width: 24, height: 24 }}
+                style={{ width: 24, height: 24 }}
               />
             ),
           },
@@ -237,50 +398,46 @@ const complicatedColumns: TableColumn<PersonRecord>[] = [
         header: "Favorite?",
         field: "actions.favorite",
         customRender: (item) => (
-          <Checkbox
-            readOnly
-            disabled
-            icon={<span style={{ opacity: 0.4 }}>☆</span>}
-            checkedIcon={<span style={{ color: "gold" }}>★</span>}
-            checked={item.actions.favorite}
-            size="small"
-          />
+          <input type="checkbox" readOnly checked={item.actions.favorite} />
         ),
       },
       {
         header: "Admin?",
         field: "actions.admin",
         customRender: (item) => (
-          <Checkbox
-            readOnly
-            disabled
-            checked={item.actions.admin}
-            size="small"
-          />
+          <input type="checkbox" readOnly checked={item.actions.admin} />
         ),
       },
     ],
   },
 ];
 
-// -------------------------
-// The main “SearchPage” component
+// ----------------------------------------------------------------------
+// Main Search Page Component
+interface ExampleSearchPageProps {
+  searchContainerProps?: object;
+  tableContainerProps?: object;
+}
 
-export default function ExampleSearchPage() {
+export default function ExampleSearchPage({
+  searchContainerProps = { maxWidth: "md", sx: { mt: 4 } },
+  tableContainerProps = { maxWidth: false, sx: { mt: 4 } },
+}: ExampleSearchPageProps) {
   const [results, setResults] = useState<PersonRecord[]>([]);
 
-  const handleSearch = async (data: PersonRecord[]) => {
+  const handleSearch = async (criteria: SearchCriteria) => {
+    const data = await dummyFetchSearchResults(criteria);
     setResults(data);
   };
 
   return (
-    <Container maxWidth={false} sx={{ mt: 4 }}>
-      <Container maxWidth="md" sx={{ mt: 4 }}>
+    <Container {...tableContainerProps}>
+      <Container {...searchContainerProps}>
         <Typography
           variant="h4"
           gutterBottom
           sx={{
-            fontFamily: "Orbitron , sans-serif",
+            fontFamily: "Orbitron, sans-serif",
             background: "linear-gradient(90deg, #ff6f61, #1976d2)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
@@ -290,11 +447,23 @@ export default function ExampleSearchPage() {
         >
           Complicated Search + Table Example
         </Typography>
-        <ExampleSearchForm onSearchResults={handleSearch} />
+        <SearchForm<SearchCriteria>
+          defaults={{
+            textQuery: "",
+            showActive: false,
+            category: "all",
+            sortOrder: "asc",
+            tags: [],
+            dateRange: { startDate: "", endDate: "" },
+            advancedOptions: { minValue: 0, maxValue: 100 },
+          }}
+          formConfig={formConfig}
+          layoutConfig={layoutConfig}
+          onSearch={handleSearch}
+        />
       </Container>
-
       {results.length > 0 ? (
-        <SearchTable<PersonRecord>
+        <Table<PersonRecord>
           columns={complicatedColumns}
           data={results}
           defaultSortField="id"
@@ -302,7 +471,7 @@ export default function ExampleSearchPage() {
           rowsPerPage={10}
         />
       ) : (
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
           No results to display. Try searching above!
         </Typography>
       )}

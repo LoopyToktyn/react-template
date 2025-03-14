@@ -21,7 +21,7 @@ import {
 import { FormConfigDictionary, LayoutConfig } from "@root/types";
 import ListField from "@components/ListField";
 
-interface FormRendererProps {
+export interface FormRendererProps {
   formConfig: FormConfigDictionary;
   layoutConfig?: LayoutConfig;
   formState: { [key: string]: any };

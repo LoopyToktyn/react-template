@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import {
   Box,
-  Table,
+  Table as MuiTable,
   TableBody,
   TableCell,
   TableContainer,
@@ -82,7 +82,7 @@ function flattenColumns<T>(columns: TableColumn<T>[]): TableColumn<T>[] {
  * - Pagination
  * - Automatic horizontal scroll when columns are wide
  */
-export function SearchTable<T extends object>({
+export function Table<T extends object>({
   columns,
   data,
   defaultSortField,
@@ -234,7 +234,7 @@ export function SearchTable<T extends object>({
           },
         }}
       >
-        <Table
+        <MuiTable
           size="small"
           sx={{
             // Let the columns expand as needed, no wrapping
@@ -274,7 +274,7 @@ export function SearchTable<T extends object>({
               </TableRow>
             ))}
           </TableBody>
-        </Table>
+        </MuiTable>
       </TableContainer>
 
       <TablePagination
