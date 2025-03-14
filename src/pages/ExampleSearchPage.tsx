@@ -399,7 +399,7 @@ const complicatedColumns: TableColumn<PersonRecord>[] = [
 
 export default function ExampleSearchPage() {
   return (
-    <Container maxWidth="md" sx={{ mt: 4 }}>
+    <Container maxWidth={false} sx={{ mt: 4 }}>
       <Typography
         variant="h4"
         gutterBottom

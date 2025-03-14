@@ -100,6 +100,15 @@ export function SearchForm<T, R extends object>({
           defaultSortField={tableProps?.defaultSortField}
           defaultSortDirection={tableProps?.defaultSortDirection || "asc"}
           rowsPerPage={tableProps?.rowsPerPage || 10}
+          selectable
+          onSelectionChange={(selectedRows) => {
+            console.log("Selected Rows:", selectedRows);
+          }}
+          bulkTableActions={[
+            { icon: "Delete", onClick: (rows) => rows },
+            { icon: "Edit", onClick: (rows) => rows },
+            { icon: "Download", onClick: (rows) => rows },
+          ]}
         />
       ) : (
         !isLoading && (
