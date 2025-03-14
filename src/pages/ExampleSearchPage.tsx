@@ -1,12 +1,11 @@
 // ExampleSearchPage.tsx
-import React, { useState } from "react";
+import React from "react";
 import { Box, Container, TextField, Typography } from "@mui/material";
-import { Table, TableColumn } from "@root/components/Table";
 import { SearchForm } from "@components/SearchForm";
-import { FormConfigDictionary } from "@root/types";
+import { TableColumn } from "@root/components/Table";
+import { FormConfigDictionary, LayoutConfig } from "@root/types";
 
-// ----------------------------------------------------------------------
-// Define your interfaces (using the ones from ExampleSearchForm as a guide)
+// Define the search criteria and record interfaces.
 export interface SearchCriteria {
   textQuery?: string;
   showActive?: boolean;
@@ -47,8 +46,7 @@ export interface PersonRecord {
   active: boolean;
 }
 
-// ----------------------------------------------------------------------
-// Dummy search function (mirroring the logic in your ExampleSearchForm)
+// Dummy search function to mimic a search API.
 const dummyFetchSearchResults = async (
   criteria: SearchCriteria
 ): Promise<PersonRecord[]> => {
@@ -147,8 +145,7 @@ const dummyFetchSearchResults = async (
   });
 };
 
-// ----------------------------------------------------------------------
-// Form configuration and layout (adapted from ExampleSearchForm.tsx)
+// Form configuration
 const formConfig: FormConfigDictionary = {
   textQuery: {
     name: "textQuery",
@@ -241,7 +238,8 @@ const formConfig: FormConfigDictionary = {
   },
 };
 
-const layoutConfig = {
+// Layout configuration
+const layoutConfig: LayoutConfig = {
   rows: [
     {
       gridProps: { spacing: 2 },
@@ -278,19 +276,7 @@ const layoutConfig = {
       gridProps: { spacing: 2 },
       columns: [
         {
-          subLayout: {
-            rows: [
-              {
-                gridProps: { spacing: 2 },
-                columns: [
-                  {
-                    fields: ["advancedOptions"],
-                    gridProps: { xs: 12 },
-                  },
-                ],
-              },
-            ],
-          },
+          fields: ["advancedOptions"],
           gridProps: { xs: 12 },
         },
       ],
@@ -298,8 +284,7 @@ const layoutConfig = {
   ],
 };
 
-// ----------------------------------------------------------------------
-// Table columns (reuse from your ExampleSearchPage.tsx)
+// Table columns for the search results table.
 const complicatedColumns: TableColumn<PersonRecord>[] = [
   {
     header: "ID",
@@ -412,69 +397,43 @@ const complicatedColumns: TableColumn<PersonRecord>[] = [
   },
 ];
 
-// ----------------------------------------------------------------------
-// Main Search Page Component
-interface ExampleSearchPageProps {
-  searchContainerProps?: object;
-  tableContainerProps?: object;
-}
-
-export default function ExampleSearchPage({
-  searchContainerProps = { maxWidth: "md", sx: { mt: 4 } },
-  tableContainerProps = { maxWidth: false, sx: { mt: 4 } },
-}: ExampleSearchPageProps) {
-  const [results, setResults] = useState<PersonRecord[]>([]);
-
-  const handleSearch = async (criteria: SearchCriteria) => {
-    const data = await dummyFetchSearchResults(criteria);
-    setResults(data);
-  };
-
+export default function ExampleSearchPage() {
   return (
-    <Container {...tableContainerProps}>
-      <Container {...searchContainerProps}>
-        <Typography
-          variant="h4"
-          gutterBottom
-          sx={{
-            fontFamily: "Orbitron, sans-serif",
-            background: "linear-gradient(90deg, #ff6f61, #1976d2)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            textTransform: "uppercase",
-            fontWeight: 700,
-          }}
-        >
-          Complicated Search + Table Example
-        </Typography>
-        <SearchForm<SearchCriteria>
-          defaults={{
-            textQuery: "",
-            showActive: false,
-            category: "all",
-            sortOrder: "asc",
-            tags: [],
-            dateRange: { startDate: "", endDate: "" },
-            advancedOptions: { minValue: 0, maxValue: 100 },
-          }}
-          formConfig={formConfig}
-          layoutConfig={layoutConfig}
-          onSearch={handleSearch}
-        />
-      </Container>
-      {results.length > 0 ? (
-        <Table<PersonRecord>
-          columns={complicatedColumns}
-          data={results}
-          defaultSortField="id"
-          defaultSortDirection="asc"
-          rowsPerPage={10}
-        />
-      ) : (
-        <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
-          No results to display. Try searching above!
-        </Typography>
-      )}
+    <Container maxWidth="md" sx={{ mt: 4 }}>
+      <Typography
+        variant="h4"
+        gutterBottom
+        sx={{
+          fontFamily: "Orbitron, sans-serif",
+          background: "linear-gradient(90deg, #ff6f61, #1976d2)",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          textTransform: "uppercase",
+          fontWeight: 700,
+        }}
+      >
+        Complicated Search + Table Example
+      </Typography>
+      <SearchForm<SearchCriteria, PersonRecord>
+        defaults={{
+          textQuery: "",
+          showActive: false,
+          category: "all",
+          sortOrder: "asc",
+          tags: [],
+          dateRange: { startDate: "", endDate: "" },
+          advancedOptions: { minValue: 0, maxValue: 100 },
+        }}
+        searchFn={dummyFetchSearchResults}
+        formConfig={formConfig}
+        layoutConfig={layoutConfig}
+        tableColumns={complicatedColumns}
+        tableProps={{
+          defaultSortField: "id",
+          defaultSortDirection: "asc",
+          rowsPerPage: 10,
+        }}
+      />
     </Container>
   );
 }
