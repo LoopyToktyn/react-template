@@ -10,6 +10,7 @@ import {
   TextField,
 } from "@mui/material";
 import { SearchTable, TableColumn } from "@components/SearchTable";
+import ExampleSearchForm from "@root/components/ExampleSearchForm";
 
 /** User's search criteria: can expand as needed. */
 interface SearchCriteria {
@@ -111,143 +112,6 @@ const SearchForm: React.FC<SearchFormProps> = ({
     </Box>
   );
 };
-
-// Simulate fetching data from an API
-async function dummyFetchSearchResults(
-  criteria: SearchCriteria
-): Promise<PersonRecord[]> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Hard-coded "database"
-      const allRecords: PersonRecord[] = [
-        {
-          id: 101,
-          person: {
-            name: { first: "Alice", last: "Doe" },
-            gender: "Female",
-          },
-          contact: {
-            email: "alice@example.com",
-            phone: { number: "(555) 111-2222", ext: "123" },
-            preferred: true,
-          },
-          address: {
-            street: { line1: "123 Oak St", line2: "Apt 2B" },
-            city: "Springfield",
-            state: "IL",
-          },
-          actions: {
-            profile: {
-              avatarUrl: "https://i.pravatar.cc/60?u=alice",
-              link: "https://example.com/users/101",
-            },
-            favorite: true,
-            admin: false,
-          },
-          active: true,
-        },
-        {
-          id: 102,
-          person: {
-            name: { first: "Bob", last: "Smith" },
-            gender: "Male",
-          },
-          contact: {
-            email: "bob.smith@foo.org",
-            phone: { number: "(555) 333-4444" },
-            preferred: false,
-          },
-          address: {
-            street: { line1: "42 Main St" },
-            city: "Somewhere",
-            state: "CA",
-          },
-          actions: {
-            profile: {
-              avatarUrl: "https://i.pravatar.cc/60?u=bob",
-              link: "https://example.com/users/102",
-            },
-            favorite: false,
-            admin: true,
-          },
-          active: false,
-        },
-        {
-          id: 103,
-          person: {
-            name: { first: "Charlie", last: "Jones" },
-            gender: "Nonbinary",
-          },
-          contact: {
-            email: "charlie@bar.net",
-            phone: { number: "(555) 666-7777" },
-            preferred: false,
-          },
-          address: {
-            street: { line1: "789 Pine Rd" },
-            city: "Metropolis",
-            state: "NY",
-          },
-          actions: {
-            profile: {
-              avatarUrl: "https://i.pravatar.cc/60?u=charlie",
-              link: "https://example.com/users/103",
-            },
-            favorite: false,
-            admin: false,
-          },
-          active: true,
-        },
-        {
-          id: 104,
-          person: {
-            name: { first: "Daisy", last: "Miller" },
-            gender: "Female",
-          },
-          contact: {
-            email: "daisy@example.org",
-            phone: { number: "(555) 888-9999" },
-            preferred: true,
-          },
-          address: {
-            street: { line1: "55 Maple Ave", line2: "Suite 100" },
-            city: "Lakeside",
-            state: "TX",
-          },
-          actions: {
-            profile: {
-              avatarUrl: "https://i.pravatar.cc/60?u=daisy",
-              link: "https://example.com/users/104",
-            },
-            favorite: true,
-            admin: true,
-          },
-          active: true,
-        },
-      ];
-
-      // Simple local filtering
-      let filtered = allRecords;
-      if (criteria.textQuery) {
-        const q = criteria.textQuery.toLowerCase();
-        filtered = filtered.filter(
-          (r) =>
-            r.person.name.first.toLowerCase().includes(q) ||
-            r.person.name.last.toLowerCase().includes(q) ||
-            r.contact.email.toLowerCase().includes(q) ||
-            r.address.street.line1.toLowerCase().includes(q) ||
-            (r.address.street.line2 || "").toLowerCase().includes(q) ||
-            r.address.city.toLowerCase().includes(q)
-        );
-      }
-      if (criteria.showActive) {
-        filtered = filtered.filter((r) => r.active);
-      }
-
-      resolve(filtered);
-    }, 750); // pretend network latency
-  });
-}
 
 // -------------------------
 // 6) Example Table Columns with multi-level subColumns & custom cells
@@ -403,31 +267,31 @@ const complicatedColumns: TableColumn<PersonRecord>[] = [
 // The main “SearchPage” component
 
 export default function ExampleSearchPage() {
-  const [criteria, setCriteria] = useState<SearchCriteria>({});
   const [results, setResults] = useState<PersonRecord[]>([]);
 
-  const handleSearch = async () => {
-    const data = await dummyFetchSearchResults(criteria);
+  const handleSearch = async (data: PersonRecord[]) => {
     setResults(data);
   };
 
-  // On mount, do an initial search
-  useEffect(() => {
-    handleSearch();
-    // eslint-disable-next-line
-  }, []);
-
   return (
     <Container maxWidth={false} sx={{ mt: 4 }}>
-      <Typography variant="h5" gutterBottom>
-        Complicated Search + Table Example
-      </Typography>
-
-      <SearchForm
-        criteria={criteria}
-        onChange={setCriteria}
-        onSearch={handleSearch}
-      />
+      <Container maxWidth="md" sx={{ mt: 4 }}>
+        <Typography
+          variant="h4"
+          gutterBottom
+          sx={{
+            fontFamily: "Orbitron , sans-serif",
+            background: "linear-gradient(90deg, #ff6f61, #1976d2)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            textTransform: "uppercase",
+            fontWeight: 700,
+          }}
+        >
+          Complicated Search + Table Example
+        </Typography>
+        <ExampleSearchForm onSearchResults={handleSearch} />
+      </Container>
 
       {results.length > 0 ? (
         <SearchTable<PersonRecord>
