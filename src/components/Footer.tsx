@@ -9,7 +9,6 @@ const Footer: React.FC = () => {
     <Box
       component="footer"
       sx={{
-        backgroundColor: theme.palette.grey[200],
         py: 2,
         textAlign: "center",
       }}

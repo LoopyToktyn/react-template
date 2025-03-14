@@ -4,6 +4,7 @@ import NotFoundPage from "@root/pages/NotFoundPage";
 import ExampleMaterialThemedPage from "@pages/ExampleMaterialThemedPage";
 import ExampleForm from "@pages/ExampleForm";
 import { RouteObject } from "react-router-dom";
+import ExampleSearchPage from "@root/pages/ExampleSearchPage";
 
 // Basic interface. Add fields as needed.
 export interface AppRoute {
@@ -29,6 +30,11 @@ export const routes: AppRoute[] = [
   {
     path: "/form",
     element: <ExampleForm />,
+    requireAuth: true,
+  },
+  {
+    path: "/search",
+    element: <ExampleSearchPage />,
     requireAuth: true,
   },
   {
