@@ -18,42 +18,6 @@ export interface FormShape {
 // ----------------------
 // Extended interfaces for our example “User” model:
 
-export interface UserApiRequest extends ApiRequest {
-  name: string;
-  email: string;
-  description?: string;
-  gender?: string;
-  subscribe?: boolean;
-  country?: string;
-  skills?: string[];
-  addresses?: string[];
-  customData?: { option: string; checked: boolean };
-}
-
-export interface UserApiResponse extends ApiResponse {
-  name: string;
-  email: string;
-  description: string;
-  gender: string;
-  subscribe: boolean;
-  country: string;
-  skills: string[];
-  addresses: string[];
-  customData: { option: string; checked: boolean };
-}
-
-export interface UserFormShape extends FormShape {
-  name: string;
-  email: string;
-  description: string;
-  gender: string;
-  subscribe: boolean;
-  country: string;
-  skills: string[];
-  addresses: string[];
-  customData: { option: string; checked: boolean };
-}
-
 // ----------------------
 // Field Configuration Types
 

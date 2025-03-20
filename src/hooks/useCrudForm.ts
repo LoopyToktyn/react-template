@@ -2,7 +2,11 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { UserApiRequest, UserApiResponse, UserFormShape } from "@root/types";
+import {
+  UserFormShape,
+  UserApiRequest,
+  UserApiResponse,
+} from "@components/CrudForm";
 
 export interface CrudOptions {
   id?: string;

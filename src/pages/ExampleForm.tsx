@@ -8,12 +8,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { CrudForm } from "@components/CrudForm";
-import {
-  UserApiResponse,
-  FormConfigDictionary,
-  LayoutConfig,
-} from "@root/types";
+import { CrudForm, UserApiResponse } from "@components/CrudForm";
+import { ApiResponse, FormConfigDictionary, LayoutConfig } from "@root/types";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 
 // ---------------------

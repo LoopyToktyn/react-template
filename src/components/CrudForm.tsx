@@ -2,13 +2,45 @@
 
 import React from "react";
 import { useCrudForm, CrudOptions } from "@hooks/useCrudForm";
-import {
-  UserFormShape,
-  UserApiRequest,
-  UserApiResponse,
-  FormConfigDictionary,
-} from "@root/types";
+import { FormConfigDictionary } from "@root/types";
+import { ApiRequest, ApiResponse, FormShape } from "@root/types";
 import FormRenderer from "./FormRenderer";
+
+export interface UserApiRequest extends ApiRequest {
+  name: string;
+  email: string;
+  description?: string;
+  gender?: string;
+  subscribe?: boolean;
+  country?: string;
+  skills?: string[];
+  addresses?: string[];
+  customData?: { option: string; checked: boolean };
+}
+
+export interface UserApiResponse extends ApiResponse {
+  name: string;
+  email: string;
+  description: string;
+  gender: string;
+  subscribe: boolean;
+  country: string;
+  skills: string[];
+  addresses: string[];
+  customData: { option: string; checked: boolean };
+}
+
+export interface UserFormShape extends FormShape {
+  name: string;
+  email: string;
+  description: string;
+  gender: string;
+  subscribe: boolean;
+  country: string;
+  skills: string[];
+  addresses: string[];
+  customData: { option: string; checked: boolean };
+}
 
 export interface CrudFormProps {
   id?: string;
