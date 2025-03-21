@@ -59,7 +59,7 @@ export interface TableProps<T> {
   /** Callbacks for changes in pagination and sorting */
   onPageChange: (newPage: number) => void;
   onRowsPerPageChange: (newRowsPerPage: number) => void;
-  onSortChange: (field: string) => void;
+  onSortChange: (field: string, direction: "asc" | "desc") => void;
 }
 
 /** Map icon string to MUI icons (for your bulk action buttons). */
@@ -155,12 +155,17 @@ export function Table<T extends object>({
       const rowSpan = hasChildren ? 1 : totalDepth - level;
       const colSpan = hasChildren ? leafCount : 1;
 
-      const isActiveSort =
-        col.field && col.field === sortField && sortDirection;
+      // Determine if this column is the active sort column.
+      const isActiveSort = col.field && col.field === sortField;
+
+      // Determine the new sort direction:
+      // If this column is already active, toggle; otherwise, default to "asc".
+      const newDirection =
+        isActiveSort && sortDirection === "asc" ? "desc" : "asc";
 
       const handleSortClick = () => {
         if (col.field) {
-          onSortChange(col.field);
+          onSortChange(col.field, newDirection);
         }
       };
 
@@ -180,7 +185,7 @@ export function Table<T extends object>({
           {isSortable ? (
             <TableSortLabel
               active={Boolean(isActiveSort)}
-              direction={sortDirection === "desc" ? "desc" : "asc"}
+              direction={isActiveSort ? sortDirection : "asc"}
               onClick={handleSortClick}
             >
               {col.header}
@@ -223,10 +228,6 @@ export function Table<T extends object>({
     onRowsPerPageChange(parseInt(e.target.value, 10));
   };
 
-  // The current page data is *already* provided by the parent for server-side
-  // (i.e., you pass only the items for `page` in `data` or you pass the entire set
-  // but typically you’d pass only the items for that page. In many designs,
-  // you’d just pass "this page's data" so the table only sees those rows.)
   const displayData = data;
 
   // For row selection
@@ -253,23 +254,19 @@ export function Table<T extends object>({
   const handleSelectAllChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newSelected = new Set(selectedRowIds);
     if (e.target.checked) {
-      // Add all current page row ids
       currentPageRowIds.forEach((id) => newSelected.add(id));
     } else {
-      // Remove all current page row ids
       currentPageRowIds.forEach((id) => newSelected.delete(id));
     }
     setSelectedRowIds(newSelected);
     onSelectionChange?.(data.filter((d) => newSelected.has((d as any).id)));
   };
 
-  // Simple zebra styling
   const getRowStyle = (index: number) =>
     index % 2 === 1 ? { backgroundColor: theme.palette.action.hover } : {};
 
   return (
     <Box sx={{ width: "100%" }}>
-      {/* Bulk actions row */}
       {selectable && bulkTableActions && (
         <Box sx={{ minHeight: 48, position: "sticky", top: 0, zIndex: 2 }}>
           <Grow in={selectedRowIds.size > 0} style={{ transformOrigin: "top" }}>
@@ -383,7 +380,6 @@ export function Table<T extends object>({
         </MuiTable>
       </TableContainer>
 
-      {/* "Dumb" pagination: pass external page, rowsPerPage, totalRows. */}
       <TablePagination
         component="div"
         count={totalRows}

@@ -17,6 +17,11 @@ export const menuItems: MenuItemConfig[] = [
     allowedRoles: [],
   },
   {
+    label: "Search Example2",
+    path: "/search2",
+    allowedRoles: [],
+  },
+  {
     label: "Reports",
     allowedRoles: [],
     subMenu: [

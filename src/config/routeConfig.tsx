@@ -4,6 +4,7 @@ import NotFoundPage from "@root/pages/NotFoundPage";
 import ExampleMaterialThemedPage from "@pages/ExampleMaterialThemedPage";
 import ExampleFormPage from "@root/pages/ExampleFormPage";
 import ExampleSearchPage from "@root/pages/ExampleSearchPage";
+import ExampleSearchPage2 from "@root/pages/ExampleSearchPage copy";
 
 // Basic interface. Add fields as needed.
 export interface AppRoute {
@@ -38,7 +39,7 @@ export const routes: AppRoute[] = [
   },
   {
     path: "/search2",
-    element: <ExampleSearchPage />,
+    element: <ExampleSearchPage2 />,
     requireAuth: true,
   },
   {

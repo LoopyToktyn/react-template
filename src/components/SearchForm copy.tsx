@@ -1,52 +1,37 @@
+// src/components/SearchForm.tsx
+
 import { Button, Typography } from "@mui/material";
 import FormRenderer from "./FormRenderer";
 import { Table, TableColumn } from "@root/components/Table copy";
-import { useSearchForm } from "@hooks/useSearchForm copy"; // (the new version)
+import { useSearchForm, UseSearchFormConfig } from "@hooks/useSearchForm copy";
 
-export interface SearchFormProps<
-  TApi extends Record<string, any>,
-  TForm,
-  TResult extends object
-> {
-  defaults: TApi;
-  searchFn: (
-    criteria: TApi | TForm,
-    options: {
-      page: number;
-      rowsPerPage: number;
-      sortField?: string;
-      sortDirection?: "asc" | "desc";
-    }
-  ) => Promise<{ results: TResult[]; count?: number }>;
-  transformIn?: (data: TApi) => TForm;
+export interface SearchFormProps<TApi, TForm, TResult extends object> {
+  /** Configuration for the search hook (includes path, HTTP method, transforms, etc.) */
+  config: UseSearchFormConfig<TApi, TForm, TResult>;
+  /** Configuration for rendering the form fields */
   formConfig: any;
   layoutConfig?: any;
+  /** Table columns and optional table props */
   tableColumns: TableColumn<TResult>[];
   tableProps?: {
     defaultSortField?: string;
     defaultSortDirection?: "asc" | "desc";
     rowsPerPage?: number;
   };
-  onFormStateChange?: (state: any) => void;
-  onResultsChange?: (results: TResult[]) => void;
-  /** Optional function to get a row ID. By default, we assume each row has `row.id`. */
+  /** Optional function to get a row ID; defaults to row.id */
   idField?: (row: TResult) => string;
 }
 
 export function SearchForm<
-  TApi extends Record<string, any>,
-  TForm,
+  TApi,
+  TForm extends Record<string, any>,
   TResult extends object
 >({
-  defaults,
-  searchFn,
-  transformIn = (data) => data as unknown as TForm,
+  config,
   formConfig,
   layoutConfig,
   tableColumns,
   tableProps,
-  onFormStateChange,
-  onResultsChange,
 }: SearchFormProps<TApi, TForm, TResult>) {
   const {
     formState,
@@ -65,21 +50,18 @@ export function SearchForm<
     sortField,
     sortDirection,
   } = useSearchForm<TApi, TForm, TResult>({
-    defaults,
-    searchFn,
-    transformIn,
-    onFormStateChange,
-    onResultsChange,
+    ...config,
     paginationConfig: {
       initialPage: 0,
       rowsPerPage: tableProps?.rowsPerPage || 10,
       defaultSortField: tableProps?.defaultSortField,
       defaultSortDirection: tableProps?.defaultSortDirection,
+      ...config.paginationConfig,
     },
   });
 
   const downloadCSV = (csvData: TResult[], filename: string) => {
-    if (csvData.length === 0) return;
+    if (!csvData || csvData.length === 0) return;
     const csvRows: string[] = [];
     const headers = Object.keys(csvData[0]);
     csvRows.push(headers.join(","));
@@ -118,7 +100,9 @@ export function SearchForm<
         formConfig={formConfig}
         layoutConfig={layoutConfig}
         formState={formState as Record<string, any>}
-        onFieldChange={handleFieldChange}
+        onFieldChange={(fieldName, value) =>
+          handleFieldChange(fieldName as keyof typeof formState, value)
+        }
       />
 
       <div style={{ marginTop: "16px" }}>
@@ -144,7 +128,7 @@ export function SearchForm<
       {results && results.length > 0 ? (
         <Table<TResult>
           columns={tableColumns}
-          data={results} // this is already just the page's data from server
+          data={results}
           selectable
           onSelectionChange={(selectedRows) => {
             console.log("Selected Rows:", selectedRows);
@@ -154,7 +138,6 @@ export function SearchForm<
             { icon: "Edit", onClick: (rows) => rows },
             { icon: "Download", onClick: (rows) => rows },
           ]}
-          /** Server-side pagination/sorting props */
           page={page}
           rowsPerPage={rowsPerPage}
           totalRows={totalCount}
