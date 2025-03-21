@@ -46,7 +46,24 @@ const FormRenderer: React.FC<FormRendererProps> = ({
         <Typography color="error">Missing config for "{fieldName}"</Typography>
       );
     }
-    const value = formState[field.name] ?? "";
+
+    let value = formState[field.name];
+
+    // Ensure type safety for different field types
+    switch (field.type) {
+      case "multiselect":
+        value = Array.isArray(value) ? value : [];
+        break;
+      case "checkbox":
+        value = typeof value === "boolean" ? value : false;
+        break;
+      case "list":
+        value = Array.isArray(value) ? value : [];
+        break;
+      default:
+        value = value ?? ""; // Fallback for text-based inputs
+    }
+
     const errorMsg = errors[field.name] || "";
     const commonProps = {
       name: field.name,
@@ -73,7 +90,7 @@ const FormRenderer: React.FC<FormRendererProps> = ({
           <FormControlLabel
             control={
               <Checkbox
-                checked={!!value}
+                checked={value}
                 onChange={(e) => onFieldChange(field.name, e.target.checked)}
                 name={field.name}
                 disabled={field.disabled}
@@ -154,7 +171,7 @@ const FormRenderer: React.FC<FormRendererProps> = ({
         return (
           <ListField
             label={field.label}
-            value={value || []}
+            value={value}
             onChange={(newValue) => onFieldChange(field.name, newValue)}
             columns={field.columns} // optional, if you store column config in field.columns
           />

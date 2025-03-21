@@ -133,19 +133,64 @@ const formConfig: FormConfigDictionary = {
 // Layout Configuration
 const exampleLayout: LayoutConfig = {
   rows: [
-    { columns: [{ fields: ["name", "email"], gridProps: { xs: 12, sm: 6 } }] },
     {
+      // ROW #1 - Basic Info
+      gridProps: { spacing: 2 },
       columns: [
-        { fields: ["gender", "subscribe"], gridProps: { xs: 12, sm: 6 } },
+        {
+          fields: ["name", "email"],
+          gridProps: { xs: 12, sm: 6 },
+        },
+        {
+          fields: ["gender", "subscribe"],
+          gridProps: { xs: 12, sm: 6 },
+        },
       ],
     },
-    { columns: [{ fields: ["description"], gridProps: { xs: 12 } }] },
     {
+      // ROW #2 - Description
+      gridProps: { spacing: 2 },
       columns: [
-        { fields: ["country", "skills"], gridProps: { xs: 12, sm: 6 } },
+        {
+          fields: ["description"],
+          gridProps: { xs: 12 },
+        },
       ],
     },
-    { columns: [{ fields: ["customData"], gridProps: { xs: 12 } }] },
+    {
+      // ROW #3 - Country & Skills
+      gridProps: { spacing: 2 },
+      columns: [
+        {
+          fields: ["country"],
+          gridProps: { xs: 12, sm: 6 },
+        },
+        {
+          fields: ["skills"],
+          gridProps: { xs: 12, sm: 6 },
+        },
+      ],
+    },
+    {
+      // ROW #4 - Addresses
+      gridProps: { spacing: 2 },
+      columns: [
+        {
+          fields: ["addresses"],
+          gridProps: { xs: 12 },
+        },
+      ],
+    },
+    {
+      // ROW #5 - Custom Composite Field
+      gridProps: { spacing: 2 },
+      columns: [
+        {
+          fields: ["customData"],
+          gridProps: { xs: 12 },
+        },
+      ],
+    },
   ],
 };
 
@@ -158,8 +203,14 @@ export default function ExamplePage() {
     UserFormShape
   >({
     id: "1",
-    fetchConfig: { path: "/users/{id}", op: "GET" },
-    updateConfig: { path: "/users/{id}", op: "PUT" },
+    fetchConfig: {
+      path: "https://jsonplaceholder.typicode.com/users/{id}", // Can also just pass the PATH and use base URL configured in axios, e.g. '/users/{id}'
+      op: "GET",
+    },
+    updateConfig: {
+      path: "https://jsonplaceholder.typicode.com/users/{id}",
+      op: "PUT",
+    },
     defaults: { name: "", email: "", description: "" },
     transformIn,
     transformOut,
@@ -174,6 +225,7 @@ export default function ExamplePage() {
       <FormRenderer
         formConfig={formConfig}
         formState={formData}
+        layoutConfig={exampleLayout}
         onFieldChange={(name, value) =>
           setFormData((prev) => ({ ...prev, [name]: value }))
         }
