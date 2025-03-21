@@ -26,58 +26,35 @@ export interface PeopleSearchParams {
 
 export interface PersonRecord {
   id: number;
-  person: {
-    name: { first: string; last: string };
-    gender: string;
+  name: string;
+  username: string;
+  email: string;
+  address: {
+    street: string;
+    suite: string;
+    city: string;
+    zipcode: string;
+    geo: {
+      lat: string;
+      lng: string;
+    };
   };
-  contact: {
-    email: string;
-    phone: { number: string; ext?: string };
-    preferred: boolean;
-  };
-  active: boolean;
-  // Other fields...
 }
 
 // Define your table columns (update as needed)
-const complicatedColumns: TableColumn<PersonRecord>[] = [
+const tableColumns: TableColumn<PersonRecord>[] = [
+  { header: "ID", field: "id" },
+  { header: "Name", field: "name" },
+  { header: "Username", field: "username" },
+  { header: "Email", field: "email" },
   {
-    header: "ID",
-    field: "id",
-  },
-  {
-    header: "Person",
+    header: "Address",
     subColumns: [
-      {
-        header: "Name",
-        subColumns: [
-          { header: "First", field: "person.name.first" },
-          { header: "Last", field: "person.name.last" },
-        ],
-      },
-      {
-        header: "Gender",
-        field: "person.gender",
-        customRender: (item) => (
-          <em style={{ color: "blue" }}>{item.person.gender}</em>
-        ),
-      },
+      { header: "Street", field: "address.street" },
+      { header: "City", field: "address.city" },
+      { header: "Zip", field: "address.zipcode" },
     ],
   },
-  {
-    header: "Contact",
-    subColumns: [
-      {
-        header: "Email",
-        field: "contact.email",
-        customRender: (item) => (
-          <a href={`mailto:${item.contact.email}`}>{item.contact.email}</a>
-        ),
-      },
-      // ... other columns
-    ],
-  },
-  // ... additional columns as needed
 ];
 
 // Example form configuration for FormRenderer.
@@ -128,21 +105,11 @@ export default function ExampleSearchPage() {
     SearchCriteria,
     PersonRecord
   > = {
-    path: "/api/people", // Your API endpoint
+    path: "https://jsonplaceholder.typicode.com/users", // Your API endpoint
     method: "GET",
     op: "searchPeople",
-    transformOut: (form) => {
-      return {
-        searchText: form.textQuery,
-        onlyActive: form.showActive,
-        category: form.category !== "all" ? form.category : undefined,
-        sortOrder: form.sortOrder,
-      };
-    },
-    transformResults: (rawData) => {
-      // Assume the API returns { results: PersonRecord[], count: number }
-      return rawData.results ?? [];
-    },
+    transformOut: (form) => form, // Not doing much for this mock API
+    transformResults: (rawData) => rawData, // raw array
     paginationConfig: {
       initialPage: 0,
       rowsPerPage: 10,
@@ -172,7 +139,7 @@ export default function ExampleSearchPage() {
         config={searchConfig}
         formConfig={formConfig}
         layoutConfig={layoutConfig}
-        tableColumns={complicatedColumns}
+        tableColumns={tableColumns}
         tableProps={{
           defaultSortField: "id",
           defaultSortDirection: "asc",
