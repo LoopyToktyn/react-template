@@ -1,8 +1,7 @@
 // src/ExamplePage.tsx
 
-import React from "react";
 import { Container, Typography, Button } from "@mui/material";
-import { useCrudForm } from "@root/hooks/useCrudForm copy";
+import { useCrudForm } from "@root/hooks/useCrudForm";
 import FormRenderer from "@components/FormRenderer";
 import {
   FormConfigDictionary,
@@ -196,7 +195,7 @@ const exampleLayout: LayoutConfig = {
 
 // ---------------------
 // Example Page Component
-export default function ExamplePage() {
+export default function ExampleFormPage() {
   const { formData, setFormData, isLoading, update } = useCrudForm<
     UserApiRequest,
     UserApiResponse,

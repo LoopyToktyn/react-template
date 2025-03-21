@@ -2,123 +2,137 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import {
-  UserFormShape,
-  UserApiRequest,
-  UserApiResponse,
-} from "@components/CrudForm";
+import axiosInstance from "@api/axiosInstance";
 
-export interface CrudOptions {
+export interface CrudConfig {
+  path: string;
+  op: "GET" | "POST" | "PUT" | "DELETE";
+}
+
+export interface CrudOptions<
+  TApiResponse extends Record<string, any> = any,
+  TApiRequest = any,
+  TFormShape = any
+> {
   id?: string;
-  fetchFn?: (
-    id: string,
-    extraParams?: Record<string, any>
-  ) => Promise<UserApiResponse>;
-  createFn: (
-    data: UserApiRequest,
-    extraParams?: Record<string, any>
-  ) => Promise<UserApiResponse>;
-  updateFn: (
-    id: string,
-    data: UserApiRequest,
-    extraParams?: Record<string, any>
-  ) => Promise<UserApiResponse>;
-  defaults: UserApiResponse;
-  transformIn: (data: UserApiResponse) => UserFormShape;
-  transformOut: (data: UserFormShape) => UserApiRequest;
+  fetchConfig?: CrudConfig;
+  createConfig?: CrudConfig;
+  updateConfig?: CrudConfig;
+  deleteConfig?: CrudConfig;
+  defaults: TApiResponse;
+  transformIn?: (data: TApiResponse) => TFormShape;
+  transformOut?: (data: TFormShape) => TApiRequest;
   extraParams?: Record<string, any>;
 }
 
-export function useCrudForm({
+export function useCrudForm<
+  TApiResponse extends Record<string, any> = any,
+  TApiRequest = any,
+  TFormShape = any
+>({
   id,
-  fetchFn,
-  createFn,
-  updateFn,
+  fetchConfig,
+  createConfig,
+  updateConfig,
+  deleteConfig,
   defaults,
-  transformIn,
-  transformOut,
+  transformIn = (data) => data as unknown as TFormShape,
+  transformOut = (data) => data as unknown as TApiRequest,
   extraParams,
-}: CrudOptions) {
+}: CrudOptions<TApiResponse, TApiRequest, TFormShape>) {
   const queryClient = useQueryClient();
+  const [formData, setFormData] = useState<TFormShape>(transformIn(defaults));
 
-  // Fetch data if editing an existing item.
+  const makeRequest = async (config?: CrudConfig, data?: any) => {
+    if (!config) throw new Error("Request configuration is missing");
+    const path = config.path.replace("{id}", id || "");
+    try {
+      switch (config.op) {
+        case "GET":
+          return (
+            await axiosInstance.get<TApiResponse>(path, { params: extraParams })
+          ).data;
+        case "POST":
+          return (
+            await axiosInstance.post<TApiResponse>(path, data, {
+              params: extraParams,
+            })
+          ).data;
+        case "PUT":
+          return (
+            await axiosInstance.put<TApiResponse>(path, data, {
+              params: extraParams,
+            })
+          ).data;
+        case "DELETE":
+          return (await axiosInstance.delete(path, { params: extraParams }))
+            .data;
+        default:
+          throw new Error("Unsupported HTTP method");
+      }
+    } catch (err) {
+      console.error(`${config.op} request error:`, err);
+      throw err;
+    }
+  };
+
+  // Fetch data
   const {
-    data: apiData,
-    isLoading,
+    data,
     error,
+    isPending: isLoading,
   } = useQuery({
-    queryKey: ["item", id],
-    queryFn: () =>
-      id && fetchFn ? fetchFn(id, extraParams) : Promise.resolve(defaults),
+    queryKey: ["fetchData", id, extraParams],
+    queryFn: async () => {
+      if (!id || !fetchConfig) return defaults;
+      return transformIn(await makeRequest(fetchConfig));
+    },
     enabled: !!id,
-    initialData: defaults,
   });
-
-  // Convert API response into form state.
-  const initialFormState = transformIn(apiData);
-  const [formState, setFormState] = useState<UserFormShape>(initialFormState);
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    setFormState(transformIn(apiData));
-  }, [apiData, transformIn]);
-
-  // Validation utility.
-  const validate = (
-    state: UserFormShape,
-    fieldValidators: Record<string, (value: any) => string | null>
-  ) => {
-    const newErrors: Record<string, string> = {};
-    for (const key in fieldValidators) {
-      const error = fieldValidators[key](state[key]);
-      if (error) {
-        newErrors[key] = error;
-      }
+    if (data) {
+      setFormData((prev) => ({ ...prev, ...data }));
     }
-    setErrors(newErrors);
-    return newErrors;
-  };
+  }, [data]);
 
-  // Create mutation.
+  // Create mutation
   const createMutation = useMutation({
-    mutationFn: () => createFn(transformOut(formState), extraParams),
-    onSuccess: (newItem) => {
-      queryClient.invalidateQueries({ queryKey: ["items"] });
-      setFormState(transformIn(newItem));
+    mutationFn: async (newData: TFormShape) => {
+      if (!createConfig) throw new Error("Create configuration is missing");
+      return makeRequest(createConfig, transformOut(newData));
     },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["fetchData"] }),
   });
 
-  // Update mutation.
+  // Update mutation
   const updateMutation = useMutation({
-    mutationFn: () =>
-      updateFn(id as string, transformOut(formState), extraParams),
-    onSuccess: (updatedItem) => {
-      queryClient.invalidateQueries({ queryKey: ["items"] });
-      setFormState(transformIn(updatedItem));
+    mutationFn: async (updatedData: TFormShape) => {
+      if (!id) throw new Error("No ID provided for update.");
+      if (!updateConfig) throw new Error("Update configuration is missing");
+      return makeRequest(updateConfig, transformOut(updatedData));
     },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["fetchData", id] }),
   });
 
-  const handleChange = (name: string, value: any) => {
-    setFormState((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (
-    e: React.FormEvent,
-    fieldValidators: Record<string, (value: any) => string | null> = {}
-  ) => {
-    e.preventDefault();
-    const validationErrors = validate(formState, fieldValidators);
-    if (Object.keys(validationErrors).length > 0) return;
-    id ? updateMutation.mutate() : createMutation.mutate();
-  };
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!id) throw new Error("No ID provided for delete.");
+      if (!deleteConfig) throw new Error("Delete configuration is missing");
+      return makeRequest(deleteConfig);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["fetchData"] }),
+  });
 
   return {
-    formState,
-    setFormState,
-    handleChange,
-    handleSubmit,
+    formData,
+    setFormData,
     isLoading,
     error,
-    errors,
+    create: createMutation.mutate,
+    update: updateMutation.mutate,
+    delete: deleteMutation.mutate,
   };
 }

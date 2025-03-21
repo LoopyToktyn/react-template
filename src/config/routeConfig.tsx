@@ -2,8 +2,7 @@ import React from "react";
 import LoginPage from "@root/pages/LoginPage";
 import NotFoundPage from "@root/pages/NotFoundPage";
 import ExampleMaterialThemedPage from "@pages/ExampleMaterialThemedPage";
-import ExampleForm from "@pages/ExampleForm";
-import ExampleForm2 from "@pages/ExampleForm copy";
+import ExampleFormPage from "@root/pages/ExampleFormPage";
 import ExampleSearchPage from "@root/pages/ExampleSearchPage";
 
 // Basic interface. Add fields as needed.
@@ -29,16 +28,16 @@ export const routes: AppRoute[] = [
   },
   {
     path: "/form",
-    element: <ExampleForm />,
-    requireAuth: true,
-  },
-  {
-    path: "/form2",
-    element: <ExampleForm2 />,
+    element: <ExampleFormPage />,
     requireAuth: true,
   },
   {
     path: "/search",
+    element: <ExampleSearchPage />,
+    requireAuth: true,
+  },
+  {
+    path: "/search2",
     element: <ExampleSearchPage />,
     requireAuth: true,
   },
