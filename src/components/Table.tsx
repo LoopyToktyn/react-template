@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import {
   Box,
   Table as MuiTable,
@@ -6,8 +6,8 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TablePagination,
   TableRow,
+  TablePagination,
   TableSortLabel,
   Paper,
   useTheme,
@@ -21,8 +21,8 @@ import EditIcon from "@mui/icons-material/Edit";
 import DownloadIcon from "@mui/icons-material/Download";
 import ArchiveIcon from "@mui/icons-material/Archive";
 
-/** Possible sorting directions (including 'none' to disable). */
-type SortDirection = "asc" | "desc" | "none";
+/** Possible sorting directions for our external state. */
+type SortDirection = "asc" | "desc" | undefined;
 
 /**
  * Defines a column in the table. Supports nesting via `subColumns`.
@@ -36,29 +36,33 @@ export interface TableColumn<T> {
 }
 
 /**
- * Original props for the table.
+ * Props for the "dumb" table, with external pagination/sorting.
  */
-export interface SearchTableProps<T> {
+export interface TableProps<T> {
   columns: TableColumn<T>[];
   data: T[];
-  defaultSortField?: string;
-  defaultSortDirection?: SortDirection;
-  rowsPerPage?: number;
-}
-
-/**
- * Extended props to support row selection and bulk actions.
- */
-export interface TableProps<T> extends SearchTableProps<T> {
+  /** If you support row selection, keep this. */
   selectable?: boolean;
   onSelectionChange?: (selectedRows: T[]) => void;
   bulkTableActions?: Array<{
     icon: string;
     onClick: (selectedRows: T[]) => void;
   }>;
+
+  /** Server-side pagination/sorting props */
+  page: number;
+  rowsPerPage: number;
+  totalRows: number;
+  sortField?: string;
+  sortDirection?: SortDirection;
+
+  /** Callbacks for changes in pagination and sorting */
+  onPageChange: (newPage: number) => void;
+  onRowsPerPageChange: (newRowsPerPage: number) => void;
+  onSortChange: (field: string, direction: "asc" | "desc") => void;
 }
 
-// Map icon string to corresponding MUI icon component
+/** Map icon string to MUI icons (for your bulk action buttons). */
 const iconMap: { [key: string]: React.ElementType } = {
   Delete: DeleteIcon,
   Edit: EditIcon,
@@ -106,48 +110,33 @@ function flattenColumns<T>(columns: TableColumn<T>[]): TableColumn<T>[] {
   );
 }
 
-/**
- * A reusable table component with:
- * - Nested (multi-level) headers
- * - Sorting (with asc/desc/none states)
- * - Pagination
- * - Row selection and bulk actions (when enabled)
- * - Automatic horizontal scroll when columns are wide
- */
 export function Table<T extends object>({
   columns,
   data,
-  defaultSortField,
-  defaultSortDirection = "asc",
-  rowsPerPage = 50,
   selectable = false,
   onSelectionChange,
   bulkTableActions,
+  page,
+  rowsPerPage,
+  totalRows,
+  sortField,
+  sortDirection,
+  onPageChange,
+  onRowsPerPageChange,
+  onSortChange,
 }: TableProps<T>) {
   const theme = useTheme();
 
-  // Sorting state
-  const [sortField, setSortField] = useState<string | undefined>(
-    defaultSortField
-  );
-  const [sortDirection, setSortDirection] = useState<SortDirection>(
-    defaultSortField ? defaultSortDirection : "none"
-  );
-
-  // Pagination state
-  const [page, setPage] = useState(0);
-  const [perPage, setPerPage] = useState(rowsPerPage);
-
-  // Internal selection state (tracked by a unique row id; we assume each row has an 'id' property)
-  const [selectedRowIds, setSelectedRowIds] = useState<Set<string | number>>(
-    new Set()
-  );
+  // For row selection only
+  const [selectedRowIds, setSelectedRowIds] = React.useState<
+    Set<string | number>
+  >(new Set());
 
   // Helper to get the selected row objects from data based on their id.
   const getSelectedRows = () =>
     data.filter((item) => selectedRowIds.has((item as any).id));
 
-  // Calculate total depth for rowSpan logic
+  // Calculate total depth for multi-row header
   const totalDepth = useMemo(() => getMaxDepth(columns), [columns]);
 
   /**
@@ -163,23 +152,20 @@ export function Table<T extends object>({
       const leafCount = countLeafColumns(col);
       const hasChildren = !!col.subColumns?.length;
       const isSortable = !!col.field;
-
       const rowSpan = hasChildren ? 1 : totalDepth - level;
       const colSpan = hasChildren ? leafCount : 1;
 
-      const isActiveSort =
-        col.field && col.field === sortField && sortDirection !== "none";
+      // Determine if this column is the active sort column.
+      const isActiveSort = col.field && col.field === sortField;
 
-      // Determine next direction in the cycle asc -> desc -> none -> asc
+      // Determine the new sort direction:
+      // If this column is already active, toggle; otherwise, default to "asc".
+      const newDirection =
+        isActiveSort && sortDirection === "asc" ? "desc" : "asc";
+
       const handleSortClick = () => {
-        if (!col.field) return;
-        if (sortField !== col.field) {
-          setSortField(col.field);
-          setSortDirection("asc");
-        } else {
-          if (sortDirection === "asc") setSortDirection("desc");
-          else if (sortDirection === "desc") setSortDirection("none");
-          else setSortDirection("asc");
+        if (col.field) {
+          onSortChange(col.field, newDirection);
         }
       };
 
@@ -198,10 +184,8 @@ export function Table<T extends object>({
         >
           {isSortable ? (
             <TableSortLabel
-              active={isActiveSort as any}
-              direction={
-                isActiveSort ? (sortDirection as "asc" | "desc") : "asc"
-              }
+              active={Boolean(isActiveSort)}
+              direction={isActiveSort ? sortDirection : "asc"}
               onClick={handleSortClick}
             >
               {col.header}
@@ -221,7 +205,6 @@ export function Table<T extends object>({
     if (!headerRows[level]) headerRows[level] = [];
     headerRows[level].push(...rowCells);
 
-    // Recurse for children
     cols.forEach((col) => {
       if (col.subColumns && col.subColumns.length > 0) {
         recurseHeaders(col.subColumns, level + 1);
@@ -233,34 +216,22 @@ export function Table<T extends object>({
   // Flatten columns for body cells
   const leafColumns = useMemo(() => flattenColumns(columns), [columns]);
 
-  // Sort data if a field and direction are set
-  const sortedData = useMemo(() => {
-    if (!sortField || sortDirection === "none") return data;
-    const copy = [...data];
-    copy.sort((a, b) => {
-      const valA = getNestedValue(a, sortField);
-      const valB = getNestedValue(b, sortField);
-      if (valA < valB) return sortDirection === "asc" ? -1 : 1;
-      if (valA > valB) return sortDirection === "asc" ? 1 : -1;
-      return 0;
-    });
-    return copy;
-  }, [data, sortField, sortDirection]);
-
-  // Handle pagination
-  const handleChangePage = (_: unknown, newPage: number) => setPage(newPage);
-  const handleChangeRowsPerPage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPerPage(parseInt(e.target.value, 10));
-    setPage(0);
+  // Handle page change from TablePagination
+  const handleChangePage = (_: unknown, newPage: number) => {
+    onPageChange(newPage);
   };
 
-  const pagedData = useMemo(() => {
-    const start = page * perPage;
-    return sortedData.slice(start, start + perPage);
-  }, [page, perPage, sortedData]);
+  // Handle rowsPerPage change from TablePagination
+  const handleChangeRowsPerPage = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    onRowsPerPageChange(parseInt(e.target.value, 10));
+  };
 
-  // Compute selection state for the current page (for the header checkbox)
-  const currentPageRowIds = pagedData.map((item) => (item as any).id);
+  const displayData = data;
+
+  // For row selection
+  const currentPageRowIds = displayData.map((item) => (item as any).id);
   const currentPageAllSelected =
     currentPageRowIds.length > 0 &&
     currentPageRowIds.every((id) => selectedRowIds.has(id));
@@ -268,7 +239,6 @@ export function Table<T extends object>({
     selectedRowIds.has(id)
   );
 
-  // Handlers for row checkbox changes
   const handleRowCheckboxChange = (item: T) => {
     const id = (item as any).id;
     const newSelected = new Set(selectedRowIds);
@@ -278,47 +248,27 @@ export function Table<T extends object>({
       newSelected.add(id);
     }
     setSelectedRowIds(newSelected);
-    onSelectionChange &&
-      onSelectionChange(
-        data.filter((item) => newSelected.has((item as any).id))
-      );
+    onSelectionChange?.(data.filter((d) => newSelected.has((d as any).id)));
   };
 
-  // Handler for "Select All" checkbox in header (applies to current page)
   const handleSelectAllChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newSelected = new Set(selectedRowIds);
-    pagedData.forEach((item) => {
-      const id = (item as any).id;
-      if (e.target.checked) {
-        newSelected.add(id);
-      } else {
-        newSelected.delete(id);
-      }
-    });
+    if (e.target.checked) {
+      currentPageRowIds.forEach((id) => newSelected.add(id));
+    } else {
+      currentPageRowIds.forEach((id) => newSelected.delete(id));
+    }
     setSelectedRowIds(newSelected);
-    onSelectionChange &&
-      onSelectionChange(
-        data.filter((item) => newSelected.has((item as any).id))
-      );
+    onSelectionChange?.(data.filter((d) => newSelected.has((d as any).id)));
   };
 
-  // Helper for alternating row style; selected rows override this with theme.palette.action.selected.
   const getRowStyle = (index: number) =>
     index % 2 === 1 ? { backgroundColor: theme.palette.action.hover } : {};
 
   return (
     <Box sx={{ width: "100%" }}>
-      {/* Reserve space above the table to prevent layout jumps */}
       {selectable && bulkTableActions && (
-        <Box
-          sx={{
-            minHeight: 48,
-            position: "sticky",
-            top: 0,
-            left: 0,
-            zIndex: 2,
-          }}
-        >
+        <Box sx={{ minHeight: 48, position: "sticky", top: 0, zIndex: 2 }}>
           <Grow in={selectedRowIds.size > 0} style={{ transformOrigin: "top" }}>
             <Box
               sx={{
@@ -351,7 +301,6 @@ export function Table<T extends object>({
       <TableContainer
         component={Paper}
         sx={{
-          // Force horizontal scrolling
           overflowX: "auto",
           maxWidth: "100%",
           "& .MuiTableCell-root": {
@@ -364,7 +313,6 @@ export function Table<T extends object>({
         <MuiTable
           size="small"
           sx={{
-            // Let the columns expand as needed, no wrapping
             tableLayout: "auto",
             minWidth: "max-content",
             whiteSpace: "nowrap",
@@ -376,7 +324,6 @@ export function Table<T extends object>({
                 key={`header-row-${rowIndex}`}
                 sx={{ backgroundColor: theme.palette.background.default }}
               >
-                {/* Add the selection header cell only in the first header row if selectable */}
                 {rowIndex === 0 && selectable && (
                   <TableCell rowSpan={totalDepth} padding="checkbox">
                     <Checkbox
@@ -392,14 +339,15 @@ export function Table<T extends object>({
               </TableRow>
             ))}
           </TableHead>
+
           <TableBody>
-            {pagedData.map((item, rowIndex) => {
+            {displayData.map((item, rowIndex) => {
               const id = (item as any).id;
               const isSelected = selectable && selectedRowIds.has(id);
-              // Combine alternating row style with selected highlight.
               const rowStyle = isSelected
                 ? { backgroundColor: theme.palette.action.selected }
                 : getRowStyle(rowIndex);
+
               return (
                 <TableRow key={id || rowIndex} sx={rowStyle}>
                   {selectable && (
@@ -434,12 +382,12 @@ export function Table<T extends object>({
 
       <TablePagination
         component="div"
-        count={sortedData.length}
+        count={totalRows}
         page={page}
         onPageChange={handleChangePage}
-        rowsPerPage={perPage}
+        rowsPerPage={rowsPerPage}
         onRowsPerPageChange={handleChangeRowsPerPage}
-        rowsPerPageOptions={[10, 20, 50, 100]}
+        rowsPerPageOptions={[5, 10, 20, 50, 100]}
       />
     </Box>
   );

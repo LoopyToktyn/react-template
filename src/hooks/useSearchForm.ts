@@ -1,113 +1,232 @@
-// useSearchForm.ts
-import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+// src/hooks/useSearchForm.ts
 
-export interface Pagination {
-  limit: number;
-  offset: number;
-  page: number;
-  count?: number;
-}
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useQuery, UseQueryResult } from "@tanstack/react-query";
+import { AxiosError } from "axios";
 
-export interface PaginationConfig {
-  initialPage?: number;
-  rowsPerPage?: number;
-}
-
-export interface UseSearchFormOptions<T, R> {
-  defaults: T;
+export interface UseSearchFormConfig<TApi, TForm, TResult> {
+  /** e.g. '/api/users' */
+  path: string;
+  /** e.g. 'search' or 'list'. Could be used for naming or logging. */
+  op?: string;
+  /** HTTP method (GET, POST, etc.). Defaults to GET */
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   /**
-   * searchFn should accept the search criteria (after transformOut is applied)
-   * along with an optional pagination object.
+   * Convert server data => initial form state
    */
-  searchFn: (criteria: T, pagination?: Pagination) => Promise<R[]>;
-  transformIn?: (data: T) => any;
-  transformOut?: (data: any) => T;
-  onFormStateChange?: (state: any) => void;
-  onResultsChange?: (results: R[]) => void;
-  paginationConfig?: PaginationConfig;
+  transformIn?: (serverData: any) => TForm;
+  /**
+   * Convert form state => request payload/query parameters.
+   * (This is the type TApi, which represents the shape of the request data.)
+   */
+  transformOut?: (formData: TForm) => TApi;
+  /**
+   * Convert final server response => the shape you want for your results.
+   */
+  transformResults?: (rawData: any) => TResult[];
+
+  onFormStateChange?: (state: TForm) => void;
+  onResultsChange?: (results: TResult[]) => void;
+
+  /** Pagination & sorting config */
+  paginationConfig?: {
+    initialPage?: number;
+    rowsPerPage?: number;
+    defaultSortField?: string;
+    defaultSortDirection?: "asc" | "desc";
+  };
+
+  /** Optionally pass an initial form state */
+  initialFormState?: TForm;
 }
 
-export function useSearchForm<T, R>(options: UseSearchFormOptions<T, R>) {
+export interface UseSearchFormReturn<TForm, TResult> {
+  formState: TForm;
+  results: TResult[];
+  totalCount: number;
+  isLoading: boolean;
+  error: AxiosError | null;
+  handleFieldChange: (fieldName: keyof TForm, value: any) => void;
+  handleSearch: () => void;
+  handlePageChange: (newPage: number) => void;
+  handleRowsPerPageChange: (newRowsPerPage: number) => void;
+  handleSortChange: (field: string, direction: "asc" | "desc") => void;
+  resetForm: () => void;
+  page: number;
+  rowsPerPage: number;
+  sortField?: string;
+  sortDirection?: "asc" | "desc";
+}
+
+export function useSearchForm<TApi, TForm extends Record<string, any>, TResult>(
+  config: UseSearchFormConfig<TApi, TForm, TResult>
+): UseSearchFormReturn<TForm, TResult> {
   const {
-    defaults,
-    searchFn,
-    transformIn = (data: T) => data,
-    transformOut = (data: any) => data as T,
+    path,
+    op = "search",
+    method = "GET",
+    transformOut,
+    transformResults,
     onFormStateChange,
     onResultsChange,
-    paginationConfig = { initialPage: 1, rowsPerPage: 10 },
-  } = options;
+    paginationConfig,
+    initialFormState,
+  } = config;
 
-  const initialPage = paginationConfig.initialPage || 1;
-  const rowsPerPage = paginationConfig.rowsPerPage || 10;
+  // Local state for the form, pagination and sorting
+  const [formState, setFormState] = useState<TForm>(
+    () => initialFormState ?? ({} as TForm)
+  );
+  const [page, setPage] = useState<number>(paginationConfig?.initialPage ?? 0);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(
+    paginationConfig?.rowsPerPage ?? 10
+  );
+  const [sortField, setSortField] = useState<string | undefined>(
+    paginationConfig?.defaultSortField
+  );
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">(
+    paginationConfig?.defaultSortDirection ?? "asc"
+  );
 
-  const [formState, setFormState] = useState<any>(transformIn(defaults));
-  const [pagination, setPagination] = useState<Pagination>({
-    page: initialPage,
-    limit: rowsPerPage,
-    offset: (initialPage - 1) * rowsPerPage,
-  });
+  // Transform the form state into the shape expected by the server (TApi)
+  const outputData = useMemo(() => {
+    return transformOut ? transformOut(formState) : formState;
+  }, [formState, transformOut]);
 
-  const handleFieldChange = (name: string, value: any) => {
-    const newState = { ...formState, [name]: value };
-    setFormState(newState);
-    if (onFormStateChange) {
-      onFormStateChange(newState);
+  // Build a dynamic queryKey that includes op, path, method, and search/pagination/sort parameters.
+  const queryKey = useMemo(() => {
+    return [
+      "search",
+      {
+        op,
+        path,
+        method,
+        params: {
+          ...outputData,
+          page,
+          rowsPerPage,
+          sortField,
+          sortDirection,
+        },
+      },
+    ];
+  }, [
+    op,
+    path,
+    method,
+    outputData,
+    page,
+    rowsPerPage,
+    sortField,
+    sortDirection,
+  ]);
+
+  const queryOptions: any = {
+    queryKey,
+    enabled: false, // only fetch after user triggers search
+    keepPreviousData: true, // retain previous results while new data loads
+  };
+
+  const { data, isLoading, error, refetch }: UseQueryResult<any, AxiosError> =
+    useQuery(queryOptions);
+
+  const [results, setResults] = useState<TResult[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
+
+  useEffect(() => {
+    if (data) {
+      // Transform the raw server response into an array of results.
+      const shapedResults = transformResults
+        ? transformResults(data)
+        : data.results ?? data;
+      setResults(shapedResults);
+      setTotalCount(data.count ?? shapedResults.length);
+      if (onResultsChange) {
+        onResultsChange(shapedResults);
+      }
     }
+  }, [data, transformResults, onResultsChange]);
+
+  // Handler to update a specific field in the form state.
+  const handleFieldChange = useCallback(
+    (fieldName: keyof TForm, value: any) => {
+      setFormState((prev) => {
+        const updated = { ...prev, [fieldName]: value };
+        onFormStateChange?.(updated);
+        return updated;
+      });
+    },
+    [onFormStateChange]
+  );
+
+  // Helper to refetch data after the page, rowsPerPage, or sort fields change.
+  // Prevents refetching in the same event loop cycle.
+  const refetchHelper = () => {
+    setTimeout(() => {
+      refetch();
+    }, 0);
   };
 
-  const resetForm = () => {
-    const initial = transformIn(defaults);
-    setFormState(initial);
-    setPagination({
-      page: initialPage,
-      limit: rowsPerPage,
-      offset: 0,
-    });
-  };
-
-  // Use React Query to handle the search API call.
-  const { data, isFetching, error, refetch } = useQuery({
-    queryKey: ["searchResults", formState, pagination],
-    queryFn: () => searchFn(transformIn(formState), pagination),
-    staleTime: 60_000,
-    enabled: false,
-  });
-
-  const handleSearch = () => {
+  // Trigger a new search (resets the page to 0)
+  const handleSearch = useCallback(() => {
+    setPage(0);
     refetch();
-  };
+  }, []);
 
-  const setPage = (page: number) => {
-    setPagination((prev) => ({
-      ...prev,
-      page,
-      offset: (page - 1) * prev.limit,
-    }));
-    refetch();
-  };
+  // Pagination handlers
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      setPage(newPage);
+      refetchHelper();
+    },
+    [refetch]
+  );
 
-  const setRowsPerPage = (rows: number) => {
-    setPagination({
-      page: 1,
-      limit: rows,
-      offset: 0,
-    });
-    refetch();
-  };
+  const handleRowsPerPageChange = useCallback(
+    (newRowsPerPage: number) => {
+      setRowsPerPage(newRowsPerPage);
+      setPage(0);
+      refetchHelper();
+    },
+    [refetch]
+  );
+
+  // Sorting handler
+  const handleSortChange = useCallback(
+    (field: string, direction: "asc" | "desc") => {
+      setSortField(field);
+      setSortDirection(direction);
+      setPage(0);
+      refetchHelper();
+    },
+    [refetch]
+  );
+
+  // Reset form and related states.
+  const resetForm = useCallback(() => {
+    setFormState(initialFormState ?? ({} as TForm));
+    setPage(paginationConfig?.initialPage ?? 0);
+    setRowsPerPage(paginationConfig?.rowsPerPage ?? 10);
+    setSortField(paginationConfig?.defaultSortField);
+    setSortDirection(paginationConfig?.defaultSortDirection ?? "asc");
+    setResults([]);
+  }, [initialFormState, paginationConfig]);
 
   return {
     formState,
-    results: data || [],
-    isLoading: isFetching,
+    results,
+    totalCount,
+    isLoading,
     error,
     handleFieldChange,
     handleSearch,
+    handlePageChange,
+    handleRowsPerPageChange,
+    handleSortChange,
     resetForm,
-    pagination,
-    setPage,
-    setRowsPerPage,
-    refetch,
+    page,
+    rowsPerPage,
+    sortField,
+    sortDirection,
   };
 }
