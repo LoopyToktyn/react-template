@@ -119,11 +119,11 @@ export function SearchForm<
 
       {isLoading && <Typography variant="body2">Loading...</Typography>}
 
-      {error && (
+      {/* {error && (
         <Typography variant="body2" color="error">
           Error: {JSON.stringify(error)}
         </Typography>
-      )}
+      )} */}
 
       {results && results.length > 0 ? (
         <Table<TResult>
@@ -150,7 +150,7 @@ export function SearchForm<
       ) : (
         !isLoading && (
           <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
-            No results to display. Try searching above!
+            No results to display.
           </Typography>
         )
       )}

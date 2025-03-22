@@ -1,12 +1,8 @@
 // src/hooks/useSearchForm.ts
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import {
-  useQuery,
-  UseQueryOptions,
-  UseQueryResult,
-} from "@tanstack/react-query";
-import { Axios, AxiosError } from "axios";
+import { useQuery, UseQueryResult } from "@tanstack/react-query";
+import { AxiosError } from "axios";
 
 export interface UseSearchFormConfig<TApi, TForm, TResult> {
   /** e.g. '/api/users' */
@@ -69,7 +65,6 @@ export function useSearchForm<TApi, TForm extends Record<string, any>, TResult>(
     path,
     op = "search",
     method = "GET",
-    transformIn,
     transformOut,
     transformResults,
     onFormStateChange,
@@ -92,7 +87,6 @@ export function useSearchForm<TApi, TForm extends Record<string, any>, TResult>(
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">(
     paginationConfig?.defaultSortDirection ?? "asc"
   );
-  const [shouldSearch, setShouldSearch] = useState(false);
 
   // Transform the form state into the shape expected by the server (TApi)
   const outputData = useMemo(() => {
@@ -127,10 +121,9 @@ export function useSearchForm<TApi, TForm extends Record<string, any>, TResult>(
     sortDirection,
   ]);
 
-  // Explicitly type the query options so that keepPreviousData is recognized.
   const queryOptions: any = {
     queryKey,
-    enabled: shouldSearch, // only fetch after user triggers search
+    enabled: false, // only fetch after user triggers search
     keepPreviousData: true, // retain previous results while new data loads
   };
 
@@ -169,25 +162,25 @@ export function useSearchForm<TApi, TForm extends Record<string, any>, TResult>(
   // Trigger a new search (resets the page to 0)
   const handleSearch = useCallback(() => {
     setPage(0);
-    setShouldSearch(true);
+    refetch();
   }, []);
 
   // Pagination handlers
   const handlePageChange = useCallback(
     (newPage: number) => {
       setPage(newPage);
-      if (shouldSearch) refetch();
+      refetch();
     },
-    [shouldSearch, refetch]
+    [refetch]
   );
 
   const handleRowsPerPageChange = useCallback(
     (newRowsPerPage: number) => {
       setRowsPerPage(newRowsPerPage);
       setPage(0);
-      if (shouldSearch) refetch();
+      refetch();
     },
-    [shouldSearch, refetch]
+    [refetch]
   );
 
   // Sorting handler
@@ -196,9 +189,9 @@ export function useSearchForm<TApi, TForm extends Record<string, any>, TResult>(
       setSortField(field);
       setSortDirection(direction);
       setPage(0);
-      if (shouldSearch) refetch();
+      refetch();
     },
-    [shouldSearch, refetch]
+    [refetch]
   );
 
   // Reset form and related states.
@@ -208,7 +201,6 @@ export function useSearchForm<TApi, TForm extends Record<string, any>, TResult>(
     setRowsPerPage(paginationConfig?.rowsPerPage ?? 10);
     setSortField(paginationConfig?.defaultSortField);
     setSortDirection(paginationConfig?.defaultSortDirection ?? "asc");
-    setShouldSearch(false);
     setResults([]);
   }, [initialFormState, paginationConfig]);
 

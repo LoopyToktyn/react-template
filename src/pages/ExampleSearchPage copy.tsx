@@ -105,7 +105,7 @@ export default function ExampleSearchPage() {
     SearchCriteria,
     PersonRecord
   > = {
-    path: "https://jsonplaceholder.typicode.com/users", // Your API endpoint
+    path: "https://jsonplaceholder.typicode.com/posts", // Your API endpoint
     method: "GET",
     op: "searchPeople",
     transformOut: (form) => form, // Not doing much for this mock API
