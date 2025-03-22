@@ -1,7 +1,6 @@
 // src/pages/ExampleSearchPage.tsx
 
-import React from "react";
-import { Box, Container, TextField, Typography } from "@mui/material";
+import { Container, Typography } from "@mui/material";
 import { SearchForm } from "@components/SearchForm copy";
 import { TableColumn } from "@root/components/Table copy";
 import { FormConfigDictionary, LayoutConfig } from "@root/types";
@@ -105,7 +104,7 @@ export default function ExampleSearchPage() {
     SearchCriteria,
     PersonRecord
   > = {
-    path: "https://jsonplaceholder.typicode.com/posts", // Your API endpoint
+    path: "https://jsonplaceholder.typicode.com/users", // Your API endpoint
     method: "GET",
     op: "searchPeople",
     transformOut: (form) => form, // Not doing much for this mock API

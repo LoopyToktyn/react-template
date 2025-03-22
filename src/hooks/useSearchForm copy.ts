@@ -159,6 +159,14 @@ export function useSearchForm<TApi, TForm extends Record<string, any>, TResult>(
     [onFormStateChange]
   );
 
+  // Helper to refetch data after the page, rowsPerPage, or sort fields change.
+  // Prevents refetching in the same event loop cycle.
+  const refetchHelper = () => {
+    setTimeout(() => {
+      refetch();
+    }, 0);
+  };
+
   // Trigger a new search (resets the page to 0)
   const handleSearch = useCallback(() => {
     setPage(0);
@@ -169,7 +177,7 @@ export function useSearchForm<TApi, TForm extends Record<string, any>, TResult>(
   const handlePageChange = useCallback(
     (newPage: number) => {
       setPage(newPage);
-      refetch();
+      refetchHelper();
     },
     [refetch]
   );
@@ -178,7 +186,7 @@ export function useSearchForm<TApi, TForm extends Record<string, any>, TResult>(
     (newRowsPerPage: number) => {
       setRowsPerPage(newRowsPerPage);
       setPage(0);
-      refetch();
+      refetchHelper();
     },
     [refetch]
   );
@@ -189,7 +197,7 @@ export function useSearchForm<TApi, TForm extends Record<string, any>, TResult>(
       setSortField(field);
       setSortDirection(direction);
       setPage(0);
-      refetch();
+      refetchHelper();
     },
     [refetch]
   );

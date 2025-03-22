@@ -387,7 +387,7 @@ export function Table<T extends object>({
         onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={handleChangeRowsPerPage}
-        rowsPerPageOptions={[10, 20, 50, 100]}
+        rowsPerPageOptions={[5, 10, 20, 50, 100]}
       />
     </Box>
   );
