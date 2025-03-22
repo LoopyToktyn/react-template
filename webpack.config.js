@@ -1,31 +1,47 @@
+// webpack.config.js
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const webpack = require("webpack");
 const dotenv = require("dotenv");
 const fs = require("fs");
+// This is optional if you want an extra minifier plugin, but Webpack in production mode
+// uses TerserPlugin by default. For advanced control, you can import TerserPlugin too.
+// const TerserPlugin = require("terser-webpack-plugin");
 
 module.exports = () => {
-  // Determine the environment mode (default to "local" if not provided)
-  const envMode = process.env.NODE_ENV || "local";
-
-  // Load the appropriate environment file
+  // Determine environment mode (defaults to "development" if not set)
+  const envMode = process.env.NODE_ENV || "development";
+  
+  // If you have environment files like .env.production, .env.development, etc.
   const envPath = path.resolve(__dirname, `.env.${envMode}`);
-  const parsedEnv = fs.existsSync(envPath) ? dotenv.parse(fs.readFileSync(envPath)) : {};
-
-  // Convert the environment variables into Webpack DefinePlugin format
+  const parsedEnv = fs.existsSync(envPath)
+    ? dotenv.parse(fs.readFileSync(envPath))
+    : {};
   const envKeys = Object.keys(parsedEnv).reduce((prev, next) => {
     prev[`process.env.${next}`] = JSON.stringify(parsedEnv[next]);
     return prev;
   }, {});
 
+  const isProd = envMode === "production";
+
   return {
+    mode: isProd ? "production" : "development",
+
+    // In production, you often want no or hidden source maps. 
+    // 'source-map' is good for Sentry or self-hosted error logging.
+    // 'hidden-source-map' hides sources but keeps line mappings.
+    devtool: isProd ? "hidden-source-map" : "source-map",
+
     entry: "./src/index.tsx",
+
     output: {
       path: path.resolve(__dirname, "dist"),
-      filename: "[name].[contenthash].js",
+      // For production, hashed filenames for long-term caching
+      filename: isProd ? "[name].[contenthash].js" : "[name].js",
       clean: true,
       publicPath: "/",
     },
+
     resolve: {
       extensions: [".ts", ".tsx", ".js", ".json"],
       alias: {
@@ -40,13 +56,17 @@ module.exports = () => {
         "@utils": path.resolve(__dirname, "src/utils/"),
       },
     },
-    mode: "development",
-    devtool: "source-map",
-    devServer: {
-      historyApiFallback: true,
-      hot: true,
-      port: 3000,
-    },
+
+    // For development, you typically have devServer. In production you wouldn't.
+    // We can conditionally apply it:
+    devServer: !isProd
+      ? {
+          historyApiFallback: true,
+          hot: true,
+          port: 3000,
+        }
+      : undefined,
+
     module: {
       rules: [
         {
@@ -58,14 +78,55 @@ module.exports = () => {
           test: /\.css$/i,
           use: ["style-loader", "css-loader"],
         },
+        // For images/fonts, you'll want url-loader or file-loader rules, e.g.:
+        // {
+        //   test: /\.(png|jpe?g|gif|svg)$/i,
+        //   type: "asset/resource",
+        // },
       ],
     },
+
+    // For better caching & code splitting:
+    optimization: {
+      // In production mode, minimize is automatically true, 
+      // but you can customize the minimizer if needed:
+      // minimize: isProd,
+      // minimizer: [
+      //   new TerserPlugin({
+      //     terserOptions: { /* advanced opts */ },
+      //   }),
+      // ],
+      splitChunks: {
+        chunks: "all",
+      },
+      runtimeChunk: "single",
+      // More advanced caching groups can go here if you want separate vendor chunks
+    },
+
     plugins: [
       new HtmlWebpackPlugin({
         template: "./public/index.html",
-        favicon: false, // Set to your favicon path if needed
+        // If you have a favicon, set:
+        // favicon: "./public/favicon.ico",
+        // Minify in production:
+        minify: isProd
+          ? {
+              removeComments: true,
+              collapseWhitespace: true,
+              removeRedundantAttributes: true,
+              useShortDoctype: true,
+              removeEmptyAttributes: true,
+              removeStyleLinkTypeAttributes: true,
+              keepClosingSlash: true,
+              minifyJS: true,
+              minifyCSS: true,
+              minifyURLs: true,
+            }
+          : false,
       }),
-      new webpack.DefinePlugin(envKeys), // Inject the environment variables dynamically
+
+      // Define environment variables
+      new webpack.DefinePlugin(envKeys),
     ],
   };
 };

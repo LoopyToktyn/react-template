@@ -4,12 +4,13 @@
   "private": true,
   "scripts": {
     "start": "cross-env NODE_ENV=local webpack serve --mode development --open",
-    "start:dev": "cross-env NODE_ENV=dev webpack serve --mode development --open",
-    "build": "cross-env NODE_ENV=local webpack --mode production",
-    "build:dev": "cross-env NODE_ENV=dev webpack --mode production",
+    "build": "cross-env NODE_ENV=production webpack --mode production",
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write .",
-    "dist": "npx serve -s dist -l 3000"
+    "dist": "npx serve -s dist -l 3000",
+    "dev:docker": "docker-compose up --build",
+    "prod:docker": "NODE_ENV=production docker-compose up --build",
+    "docker:down": "docker-compose down"
   },
   "dependencies": {
     "@emotion/react": "^11.10.6",
