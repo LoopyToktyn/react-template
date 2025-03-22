@@ -1,150 +1,243 @@
-// src/pages/ExampleSearchPage.tsx
+// src/ExamplePage.tsx
 
-import { Container, Typography } from "@mui/material";
-import { SearchForm } from "@components/SearchForm";
-import { TableColumn } from "@root/components/Table";
-import { FormConfigDictionary, LayoutConfig } from "@root/types";
-import { UseSearchFormConfig } from "@hooks/useSearchForm";
+import { Container, Typography, Button } from "@mui/material";
+import { useCrudForm } from "@root/hooks/useCrudForm";
+import FormRenderer from "@components/FormRenderer";
+import {
+  FormConfigDictionary,
+  LayoutConfig,
+  ApiRequest,
+  ApiResponse,
+  FormShape,
+} from "@root/types";
 
-// Define types for our search.
-export interface SearchCriteria {
-  textQuery?: string;
-  showActive?: boolean;
-  category?: string;
-  sortOrder?: string;
-  // Additional form fields...
-}
-
-export interface PeopleSearchParams {
-  searchText?: string;
-  onlyActive?: boolean;
-  category?: string;
-  sortOrder?: string;
-  // Any additional parameters for the API
-}
-
-export interface PersonRecord {
-  id: number;
+// ---------------------
+// Example API Type Definitions for this page
+export interface UserApiRequest extends ApiRequest {
   name: string;
-  username: string;
   email: string;
-  address: {
-    street: string;
-    suite: string;
-    city: string;
-    zipcode: string;
-    geo: {
-      lat: string;
-      lng: string;
-    };
-  };
+  description?: string;
+  gender?: string;
+  subscribe?: boolean;
+  country?: string;
+  skills?: string[];
+  addresses?: string[];
+  customData?: { option: string; checked: boolean };
 }
 
-// Define your table columns (update as needed)
-const tableColumns: TableColumn<PersonRecord>[] = [
-  { header: "ID", field: "id" },
-  { header: "Name", field: "name" },
-  { header: "Username", field: "username" },
-  { header: "Email", field: "email" },
-  {
-    header: "Address",
-    subColumns: [
-      { header: "Street", field: "address.street" },
-      { header: "City", field: "address.city" },
-      { header: "Zip", field: "address.zipcode" },
+export interface UserApiResponse extends ApiResponse {
+  name: string;
+  email: string;
+  description: string;
+  gender: string;
+  subscribe: boolean;
+  country: string;
+  skills: string[];
+  addresses: string[];
+  customData: { option: string; checked: boolean };
+}
+
+export interface UserFormShape extends FormShape {
+  name: string;
+  email: string;
+  description: string;
+  gender: string;
+  subscribe: boolean;
+  country: string;
+  skills: string[];
+  addresses: string[];
+  customData: { option: string; checked: boolean };
+}
+
+// ---------------------
+// API Transformation Functions
+const transformIn = (apiData: any) => ({
+  ...apiData,
+  customData: apiData.customData || { option: "", checked: false },
+});
+
+const transformOut = (formData: any) => ({
+  ...formData,
+});
+
+// ---------------------
+// Form Configuration
+const formConfig: FormConfigDictionary = {
+  name: { name: "name", label: "Name", type: "text", required: true },
+  email: { name: "email", label: "Email", type: "text", required: true },
+  description: { name: "description", label: "Description", type: "textarea" },
+  gender: {
+    name: "gender",
+    label: "Gender",
+    type: "radio",
+    options: [
+      { label: "Male", value: "male" },
+      { label: "Female", value: "female" },
     ],
   },
-];
-
-// Example form configuration for FormRenderer.
-const formConfig: FormConfigDictionary = {
-  textQuery: { name: "textQuery", label: "Search Query", type: "text" },
-  showActive: {
-    name: "showActive",
-    label: "Show Active Only",
-    type: "checkbox",
-  },
-  category: {
-    name: "category",
-    label: "Category",
+  subscribe: { name: "subscribe", label: "Subscribe", type: "checkbox" },
+  country: {
+    name: "country",
+    label: "Country",
     type: "select",
     options: [
-      { label: "All", value: "all" },
-      { label: "Category A", value: "a" },
-      { label: "Category B", value: "b" },
-      { label: "Category C", value: "c" },
+      { label: "USA", value: "usa" },
+      { label: "Canada", value: "canada" },
     ],
   },
-  // ... add any additional fields as needed
+  skills: {
+    name: "skills",
+    label: "Skills",
+    type: "multiselect",
+    options: [
+      { label: "JavaScript", value: "javascript" },
+      { label: "React", value: "react" },
+      { label: "TypeScript", value: "typescript" },
+    ],
+  },
+
+  addresses: {
+    name: "addresses",
+    label: "Addresses",
+    type: "list",
+    columns: [
+      { key: "street", label: "Street" },
+      { key: "city", label: "City" },
+      { key: "zip", label: "ZIP Code" },
+    ],
+  },
+  customData: {
+    name: "customData",
+    label: "Custom Field",
+    type: "composite",
+    customRender: (value, onChange, error) => (
+      <div>
+        <Typography variant="subtitle1">Custom Field</Typography>
+        <input
+          type="text"
+          value={value.option}
+          onChange={(e) => onChange({ ...value, option: e.target.value })}
+        />
+        <input
+          type="checkbox"
+          checked={value.checked}
+          onChange={(e) => onChange({ ...value, checked: e.target.checked })}
+        />
+      </div>
+    ),
+  },
 };
 
-const layoutConfig: LayoutConfig = {
+// ---------------------
+// Layout Configuration
+const exampleLayout: LayoutConfig = {
   rows: [
     {
+      // ROW #1 - Basic Info
       gridProps: { spacing: 2 },
       columns: [
         {
-          fields: ["textQuery", "category"],
+          fields: ["name", "email"],
           gridProps: { xs: 12, sm: 6 },
         },
         {
-          fields: ["showActive", "sortOrder"],
+          fields: ["gender", "subscribe"],
           gridProps: { xs: 12, sm: 6 },
         },
       ],
     },
-    // ... additional layout rows if needed
+    {
+      // ROW #2 - Description
+      gridProps: { spacing: 2 },
+      columns: [
+        {
+          fields: ["description"],
+          gridProps: { xs: 12 },
+        },
+      ],
+    },
+    {
+      // ROW #3 - Country & Skills
+      gridProps: { spacing: 2 },
+      columns: [
+        {
+          fields: ["country"],
+          gridProps: { xs: 12, sm: 6 },
+        },
+        {
+          fields: ["skills"],
+          gridProps: { xs: 12, sm: 6 },
+        },
+      ],
+    },
+    {
+      // ROW #4 - Addresses
+      gridProps: { spacing: 2 },
+      columns: [
+        {
+          fields: ["addresses"],
+          gridProps: { xs: 12 },
+        },
+      ],
+    },
+    {
+      // ROW #5 - Custom Composite Field
+      gridProps: { spacing: 2 },
+      columns: [
+        {
+          fields: ["customData"],
+          gridProps: { xs: 12 },
+        },
+      ],
+    },
   ],
 };
 
-export default function ExampleSearchPage() {
-  // Define the search config with transforms.
-  const searchConfig: UseSearchFormConfig<
-    PeopleSearchParams,
-    SearchCriteria,
-    PersonRecord
-  > = {
-    path: "https://jsonplaceholder.typicode.com/users", // Your API endpoint
-    method: "GET",
-    op: "searchPeople",
-    transformOut: (form) => form, // Not doing much for this mock API
-    transformResults: (rawData) => rawData, // raw array
-    paginationConfig: {
-      initialPage: 0,
-      rowsPerPage: 10,
-      defaultSortField: "id",
-      defaultSortDirection: "asc",
+// ---------------------
+// Example Page Component
+export default function ExampleFormPage() {
+  const { formData, setFormData, isLoading, update } = useCrudForm<
+    UserApiRequest,
+    UserApiResponse,
+    UserFormShape
+  >({
+    id: "1",
+    fetchConfig: {
+      path: "https://jsonplaceholder.typicode.com/users/{id}", // Can also just pass the PATH and use base URL configured in axios, e.g. '/users/{id}'
+      op: "GET",
     },
-  };
+    updateConfig: {
+      path: "https://jsonplaceholder.typicode.com/users/{id}",
+      op: "PUT",
+    },
+    defaults: { name: "", email: "", description: "" },
+    transformIn,
+    transformOut,
+  });
 
   return (
-    <Container maxWidth={false} sx={{ mt: 4 }}>
-      <Typography
-        variant="h4"
-        gutterBottom
-        sx={{
-          fontFamily: "Orbitron, sans-serif",
-          background: "linear-gradient(90deg, #ff6f61, #1976d2)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          textTransform: "uppercase",
-          fontWeight: 700,
-        }}
-      >
-        Complicated Search + Table Example
+    <Container maxWidth="md" sx={{ mt: 4 }}>
+      <Typography variant="h4" gutterBottom>
+        Example Form with Dynamic Rendering
       </Typography>
 
-      <SearchForm<PeopleSearchParams, SearchCriteria, PersonRecord>
-        config={searchConfig}
+      <FormRenderer
         formConfig={formConfig}
-        layoutConfig={layoutConfig}
-        tableColumns={tableColumns}
-        tableProps={{
-          defaultSortField: "id",
-          defaultSortDirection: "asc",
-          rowsPerPage: 10,
-        }}
+        formState={formData}
+        layoutConfig={exampleLayout}
+        onFieldChange={(name, value) =>
+          setFormData((prev) => ({ ...prev, [name]: value }))
+        }
       />
+
+      <Button
+        onClick={() => update(formData)}
+        variant="contained"
+        color="primary"
+        sx={{ mt: 2 }}
+      >
+        Save
+      </Button>
     </Container>
   );
 }

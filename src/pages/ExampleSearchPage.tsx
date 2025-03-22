@@ -23,6 +23,7 @@ export interface PeopleSearchParams {
   // Any additional parameters for the API
 }
 
+// Format of the data returned from the API.
 export interface PersonRecord {
   id: number;
   name: string;
@@ -98,17 +99,16 @@ const layoutConfig: LayoutConfig = {
 };
 
 export default function ExampleSearchPage() {
-  // Define the search config with transforms.
   const searchConfig: UseSearchFormConfig<
     PeopleSearchParams,
     SearchCriteria,
     PersonRecord
   > = {
-    path: "https://jsonplaceholder.typicode.com/users", // Your API endpoint
+    path: "https://jsonplaceholder.typicode.com/users",
     method: "GET",
     op: "searchPeople",
-    transformOut: (form) => form, // Not doing much for this mock API
-    transformResults: (rawData) => rawData, // raw array
+    transformOut: (form) => form,
+    transformResults: (rawData) => rawData,
     paginationConfig: {
       initialPage: 0,
       rowsPerPage: 10,
@@ -131,7 +131,7 @@ export default function ExampleSearchPage() {
           fontWeight: 700,
         }}
       >
-        Complicated Search + Table Example
+        Search + Table Example
       </Typography>
 
       <SearchForm<PeopleSearchParams, SearchCriteria, PersonRecord>
