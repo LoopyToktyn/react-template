@@ -1,8 +1,7 @@
-import React, { Suspense } from "react";
+import { Suspense } from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
 import { AppRoute, routes } from "@config/routeConfig";
 import { useAuthContext } from "@context/AuthContext";
-import AppLayout from "@components/AppLayout";
 
 const RoutesComponent = () => {
   const { authEnabled, isAuthenticated, roles } = useAuthContext();
@@ -15,6 +14,9 @@ const RoutesComponent = () => {
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <Routes>
+        {/* Redirect base path to default landing page */}
+        <Route path="/" element={<Navigate to="/search" replace />} />
+
         {/* We can route config-based. For each route in the array: */}
         {routes.map(
           (

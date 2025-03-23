@@ -1,7 +1,6 @@
 // src/context/LoadingContext.tsx
 import React, { createContext, useState, useContext, ReactNode } from "react";
 import CircularProgress from "@mui/material/CircularProgress";
-import Box from "@mui/material/Box";
 import Backdrop from "@mui/material/Backdrop";
 
 interface LoadingContextProps {
