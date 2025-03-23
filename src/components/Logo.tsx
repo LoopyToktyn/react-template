@@ -1,11 +1,11 @@
 import { Box } from "@mui/material";
 import React from "react";
+import logo from "@assets/images/logo.svg";
 
 const Logo = (props: React.SVGProps<any>) => (
   <Box
-    // component={Logo}
     component="img"
-    src="/images/neon_loopy_toktyn2.svg"
+    src={logo}
     alt="Logo"
     sx={{
       height: 60,

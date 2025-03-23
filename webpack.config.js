@@ -47,6 +47,7 @@ module.exports = () => {
       alias: {
         "@root": path.resolve(__dirname, "src/"),
         "@api": path.resolve(__dirname, "src/api/"),
+        "@assets": path.resolve(__dirname, "src/assets/"),
         "@components": path.resolve(__dirname, "src/components/"),
         "@config": path.resolve(__dirname, "src/config/"),
         "@context": path.resolve(__dirname, "src/context/"),
@@ -78,11 +79,10 @@ module.exports = () => {
           test: /\.css$/i,
           use: ["style-loader", "css-loader"],
         },
-        // For images/fonts, you'll want url-loader or file-loader rules, e.g.:
-        // {
-        //   test: /\.(png|jpe?g|gif|svg)$/i,
-        //   type: "asset/resource",
-        // },
+        {
+          test: /\.(png|jpe?g|gif|svg)$/i,
+          type: "asset/resource",
+        },
       ],
     },
 
