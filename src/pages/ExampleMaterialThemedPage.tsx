@@ -1,17 +1,14 @@
-import React from "react";
 import { useTheme } from "@mui/material/styles";
 import {
-  AppBar,
   Box,
   Button,
   Container,
   Grid,
   Paper,
-  Toolbar,
   Typography,
   CircularProgress,
 } from "@mui/material";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "@api/axiosInstance";
 
@@ -29,7 +26,6 @@ const ExampleMaterialThemedPage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
 
-  // React Query setup with the latest best practices
   const { data, refetch, isFetching, isError, error } = useQuery({
     queryKey: ["randomPost"],
     queryFn: fetchRandomPost,
@@ -39,17 +35,6 @@ const ExampleMaterialThemedPage = () => {
 
   return (
     <Box className="fancy-page">
-      {/* <AppBar position="static" color="primary">
-        <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Fancy Material-UI Page
-          </Typography>
-          <Button color="inherit" onClick={() => navigate("/login")}>
-            Login
-          </Button>
-        </Toolbar>
-      </AppBar> */}
-
       <Container sx={{ pt: theme.spacing(4) }}>
         <Paper elevation={3} sx={{ p: theme.spacing(3), mb: theme.spacing(4) }}>
           <Typography variant="h4" gutterBottom>

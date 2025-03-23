@@ -11,7 +11,7 @@ import App from "./App";
 import { AuthProvider } from "@context/AuthContext";
 import { LoadingProvider } from "@context/LoadingContext";
 import { ColorModeProvider } from "@context/ColorModeContext";
-import axiosInstance from "@api/axiosInstance"; // <-- your custom axios instance
+import axiosInstance from "@api/axiosInstance";
 
 import "@styles/global.css";
 

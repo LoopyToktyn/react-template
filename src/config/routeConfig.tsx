@@ -5,7 +5,6 @@ import ExampleMaterialThemedPage from "@pages/ExampleMaterialThemedPage";
 import ExampleFormPage from "@root/pages/ExampleFormPage";
 import ExampleSearchPage from "@root/pages/ExampleSearchPage";
 
-// Basic interface. Add fields as needed.
 export interface AppRoute {
   path: string;
   element: React.ReactNode;
@@ -13,8 +12,6 @@ export interface AppRoute {
   allowedRoles?: string[];
 }
 
-// For simplicity, all routes use the same layout now.
-// We'll handle the 404 in a special catch-all below.
 export const routes: AppRoute[] = [
   {
     path: "/login",

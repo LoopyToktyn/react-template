@@ -4,9 +4,6 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const webpack = require("webpack");
 const dotenv = require("dotenv");
 const fs = require("fs");
-// This is optional if you want an extra minifier plugin, but Webpack in production mode
-// uses TerserPlugin by default. For advanced control, you can import TerserPlugin too.
-// const TerserPlugin = require("terser-webpack-plugin");
 
 module.exports = () => {
   // Determine environment mode (defaults to "development" if not set)
@@ -88,19 +85,10 @@ module.exports = () => {
 
     // For better caching & code splitting:
     optimization: {
-      // In production mode, minimize is automatically true, 
-      // but you can customize the minimizer if needed:
-      // minimize: isProd,
-      // minimizer: [
-      //   new TerserPlugin({
-      //     terserOptions: { /* advanced opts */ },
-      //   }),
-      // ],
       splitChunks: {
         chunks: "all",
       },
       runtimeChunk: "single",
-      // More advanced caching groups can go here if you want separate vendor chunks
     },
 
     plugins: [

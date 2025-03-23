@@ -15,10 +15,23 @@ import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "@context/AuthContext";
 import { ExpandMore } from "@mui/icons-material";
 import { menuItems } from "@config/menuConfig";
-import { MenuItemConfig, NestedMenuItemProps } from "@root/types";
 
+// MENU TYPES
+export interface MenuItemConfig {
+  label: string;
+  path?: string; // only for leaf items
+  allowedRoles?: string[];
+  subMenu?: MenuItemConfig[];
+}
+
+export interface NestedMenuItemProps {
+  item: MenuItemConfig;
+  roles: string[];
+  level?: number;
+  closeAllMenus: () => void;
+  closeSignal: number;
+}
 // Define the nested menu structure
-
 const NestedMenuItem: React.FC<NestedMenuItemProps> = ({
   item,
   roles,

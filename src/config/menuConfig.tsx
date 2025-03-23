@@ -1,4 +1,4 @@
-import { MenuItemConfig } from "@root/types";
+import { MenuItemConfig } from "@components/Menu";
 
 export const menuItems: MenuItemConfig[] = [
   {

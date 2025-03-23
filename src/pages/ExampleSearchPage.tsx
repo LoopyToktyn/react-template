@@ -3,8 +3,9 @@
 import { Container, Typography } from "@mui/material";
 import { SearchForm } from "@components/SearchForm";
 import { TableColumn } from "@root/components/Table";
-import { FormConfigDictionary, LayoutConfig } from "@root/types";
 import { UseSearchFormConfig } from "@hooks/useSearchForm";
+
+import { FormConfigDictionary, LayoutConfig } from "@components/FormRenderer";
 
 // Define types for our search.
 export interface SearchCriteria {

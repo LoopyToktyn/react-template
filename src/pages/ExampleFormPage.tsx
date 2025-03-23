@@ -2,14 +2,11 @@
 
 import { Container, Typography, Button } from "@mui/material";
 import { useCrudForm } from "@root/hooks/useCrudForm";
-import FormRenderer from "@components/FormRenderer";
-import {
+import FormRenderer, {
   FormConfigDictionary,
   LayoutConfig,
-  ApiRequest,
-  ApiResponse,
-  FormShape,
-} from "@root/types";
+} from "@components/FormRenderer";
+import { ApiRequest, ApiResponse, FormShape } from "@root/types";
 
 // ---------------------
 // Example API Type Definitions for this page

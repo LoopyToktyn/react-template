@@ -12,7 +12,7 @@ import { useLoading } from "./LoadingContext";
 interface AuthState {
   isAuthenticated: boolean;
   roles: string[];
-  username?: string; // or any user info you want to store
+  username?: string;
 }
 
 interface AuthContextType extends AuthState {
