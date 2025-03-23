@@ -7,7 +7,7 @@ interface ApiResponse {
 }
 
 const axiosInstance = axios.create({
-  baseURL: process.env.REACT_APP_BASE_URL || "http://localhost:8080",
+  baseURL: window._env_?.BASE_URL || "http://localhost:8080",
 });
 
 const middleware = (response: AxiosResponse<ApiResponse>) => {

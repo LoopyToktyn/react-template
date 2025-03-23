@@ -9,7 +9,7 @@
     "format": "prettier --write .",
     "dist": "npx serve -s dist -l 3000",
     "dev:docker": "docker-compose up --build",
-    "prod:docker": "NODE_ENV=production docker-compose up --build",
+    "prod:docker": "cross-env NODE_ENV=production docker-compose -f docker-compose.yml up --build",
     "docker:down": "docker-compose down"
   },
   "dependencies": {

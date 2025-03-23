@@ -33,18 +33,17 @@ const getStoredAuth = (): AuthState => {
 const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   roles: [],
-  authEnabled: process.env.REACT_APP_ENABLE_AUTH !== "false",
+  authEnabled: window._env_?.ENABLE_AUTH !== "false",
   toggleAuth: () => {},
   login: async () => {},
   logout: () => {},
   invalidateAuth: () => {},
 });
-
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [authEnabled, setAuthEnabled] = useState(
-    process.env.REACT_APP_ENABLE_AUTH !== "false"
+    window._env_?.ENABLE_AUTH !== "false"
   );
   const [isAuthenticated, setIsAuthenticated] = useState(
     getStoredAuth().isAuthenticated
@@ -88,9 +87,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   // On real apps, you'd handle errors with try/catch, toast, etc.
   const fetchRoles = async (): Promise<string[]> => {
     // Simulate an API that returns user roles if the cookie is valid
-    const response = await axios.get("/api/roles", { withCredentials: true });
+    // const response = await axios.get("/api/roles", { withCredentials: true });
     // e.g. response.data might be { roles: ["USER", "ADMIN"] }
-    return response.data.roles;
+    // return response.data.roles;
+    return ["USER", "ADMIN"];
   };
 
   const logout = () => {
