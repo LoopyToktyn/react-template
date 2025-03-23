@@ -12,7 +12,7 @@ FROM base AS dev
 RUN npm install
 COPY . .
 EXPOSE 3000
-CMD ["npm", "run", "start"]  # Assumes this starts webpack-dev-server
+CMD npm run start  # Assumes this starts webpack-dev-server
 
 ### Build stage for production
 FROM base AS build
