@@ -147,8 +147,3 @@ All scripts are defined in `package.json`:
 3. **Open a PR** for review.
 
 We use **ESLint** + **Prettier** to maintain a consistent code style. When in doubt, run `npm run format` before pushing commits.
-
-## Next Steps
-
-- Dive into the [**Detailed Documentation**](./docs/README.md) to learn more about the hooks, contexts, and how to extend this boilerplate.
-- Explore the project structure inside `src/` to see examples of the included patterns.
