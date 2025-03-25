@@ -7,12 +7,10 @@ import React, {
   ReactNode,
 } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { mockAuthService } from "@api/mock/mockAuthService";
-import { authService as realAuthService } from "@api/authService";
+import { services } from "@config/servicesConfig";
 import { useLoading } from "./LoadingContext";
 
-const isMock = window._env_?.ENABLE_AUTH === "false";
-const authService: AuthService = isMock ? mockAuthService : realAuthService;
+const authService: AuthService = services.auth;
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -21,8 +19,6 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  authEnabled: boolean;
-  toggleAuth: () => void;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   invalidateAuth: () => void;
@@ -44,8 +40,6 @@ const getStoredAuth = (): AuthState => {
 const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   roles: [],
-  authEnabled: window._env_?.ENABLE_AUTH !== "false",
-  toggleAuth: () => {},
   login: async () => {},
   logout: () => {},
   invalidateAuth: () => {},
@@ -54,9 +48,6 @@ const AuthContext = createContext<AuthContextType>({
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [authEnabled, setAuthEnabled] = useState(
-    window._env_?.ENABLE_AUTH !== "false"
-  );
   const [isAuthenticated, setIsAuthenticated] = useState(
     getStoredAuth().isAuthenticated
   );
@@ -71,10 +62,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       JSON.stringify({ isAuthenticated, roles })
     );
   }, [isAuthenticated, roles]);
-
-  const toggleAuth = () => {
-    setAuthEnabled((prev) => !prev);
-  };
 
   const invalidateAuth = () => {
     setIsAuthenticated(false);
@@ -110,11 +97,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     refetchOnWindowFocus: false,
   });
 
-  // On mount (or when authEnabled becomes true) trigger a one-time refetch.
-  useEffect(() => {
-    refetchRoles();
-  }, [authEnabled, refetchRoles]);
-
   const login = async (user: string, pass: string) => {
     setGlobalLoading(true);
     try {
@@ -136,8 +118,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     isAuthenticated,
     roles,
     username,
-    authEnabled,
-    toggleAuth,
     login,
     logout,
     invalidateAuth,

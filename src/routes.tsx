@@ -4,7 +4,7 @@ import { AppRoute, routes } from "@config/routeConfig";
 import { useAuthContext } from "@context/AuthContext";
 
 const RoutesComponent = () => {
-  const { authEnabled, isAuthenticated, roles } = useAuthContext();
+  const { isAuthenticated, roles } = useAuthContext();
 
   const hasAnyRole = (requiredRoles: string[]) => {
     if (!roles || roles.length === 0) return false;
@@ -30,7 +30,7 @@ const RoutesComponent = () => {
                 element={
                   <>
                     {/* If route requires auth, block if not authorized */}
-                    {!authEnabled || !requireAuth ? (
+                    {!requireAuth ? (
                       element
                     ) : !isAuthenticated ? (
                       <Navigate to="/login" replace />
