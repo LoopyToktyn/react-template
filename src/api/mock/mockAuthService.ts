@@ -1,20 +1,25 @@
 // src/api/mock/mockAuthService.ts
 import { AuthService } from "@context/AuthContext";
 
+let mockSessionActive = false;
+
 export const mockAuthService: AuthService = {
-  async login(username: string, password: string) {
-    // Simple “pretend” login with a short delay
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    // no-op since mock
+  async login(username, password) {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    mockSessionActive = true;
   },
 
   async logout() {
-    // In a real app you might do something here
+    mockSessionActive = false;
   },
 
   async fetchRoles() {
-    // The mock always returns roles so that a user
-    // is considered “logged in” after login
+    if (!mockSessionActive) {
+      const error = new Error("Not logged in");
+      (error as any).status = 401;
+      throw error;
+    }
+
     return ["USER", "ADMIN"];
   },
 };

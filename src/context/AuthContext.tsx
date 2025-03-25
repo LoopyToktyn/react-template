@@ -112,9 +112,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
   // On mount (or when authEnabled becomes true) trigger a one-time refetch.
   useEffect(() => {
-    if (authEnabled) {
-      refetchRoles();
-    }
+    refetchRoles();
   }, [authEnabled, refetchRoles]);
 
   const login = async (user: string, pass: string) => {
