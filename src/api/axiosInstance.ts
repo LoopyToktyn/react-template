@@ -8,6 +8,10 @@ interface ApiResponse {
 
 const axiosInstance = axios.create({
   baseURL: window._env_?.BASE_URL || "http://localhost:8080",
+  withCredentials: true, // this is critical for sending cookies
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
 const middleware = (response: AxiosResponse<ApiResponse>) => {

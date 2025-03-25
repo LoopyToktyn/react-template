@@ -6,8 +6,13 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import axios from "axios";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { mockAuthService } from "@api/mock/mockAuthService";
+import { authService as realAuthService } from "@api/authService";
 import { useLoading } from "./LoadingContext";
+
+const isMock = window._env_?.ENABLE_AUTH === "false";
+const authService: AuthService = isMock ? mockAuthService : realAuthService;
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -21,6 +26,12 @@ interface AuthContextType extends AuthState {
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   invalidateAuth: () => void;
+}
+
+export interface AuthService {
+  login(username: string, password: string): Promise<void>;
+  logout(): Promise<void>;
+  fetchRoles(): Promise<string[]>;
 }
 
 const AUTH_STORAGE_KEY = "authState";
@@ -39,6 +50,7 @@ const AuthContext = createContext<AuthContextType>({
   logout: () => {},
   invalidateAuth: () => {},
 });
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
@@ -51,6 +63,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const [roles, setRoles] = useState<string[]>(getStoredAuth().roles);
   const [username, setUsername] = useState<string | undefined>();
   const { setGlobalLoading } = useLoading();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     localStorage.setItem(
@@ -63,68 +76,63 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     setAuthEnabled((prev) => !prev);
   };
 
-  // Pretend login. This calls a fake endpoint, or you can adapt to real
-  const login = async (user: string, pass: string) => {
-    setGlobalLoading(true);
-    try {
-      // Fake call: e.g. POST /api/login
-      // This should set a session cookie if success
-      await new Promise((r) => setTimeout(r, 700)); // short delay for test
-      // Here, you might do: const response = await axios.post("/api/login", { user, pass });
-
-      // We store user info if success
-      setIsAuthenticated(true);
-      setUsername(user);
-
-      // Then fetch roles
-      // const fetchedRoles = await fetchRoles();
-      // setRoles(fetchedRoles);
-    } finally {
-      setGlobalLoading(false);
-    }
-  };
-
-  // On real apps, you'd handle errors with try/catch, toast, etc.
-  const fetchRoles = async (): Promise<string[]> => {
-    // Simulate an API that returns user roles if the cookie is valid
-    // const response = await axios.get("/api/roles", { withCredentials: true });
-    // e.g. response.data might be { roles: ["USER", "ADMIN"] }
-    // return response.data.roles;
-    return ["USER", "ADMIN"];
-  };
-
-  const logout = () => {
-    // e.g. call /api/logout to clear session cookies
-    axios.post("/api/logout", {}, { withCredentials: true }).catch(() => {});
-    invalidateAuth();
-  };
-
   const invalidateAuth = () => {
     setIsAuthenticated(false);
     setRoles([]);
     setUsername(undefined);
     localStorage.removeItem(AUTH_STORAGE_KEY);
+    queryClient.removeQueries({ queryKey: ["fetchRoles"] });
   };
 
-  // On first load, check if cookie is valid by calling /getRoles
-  useEffect(() => {
-    const trySessionRecovery = async () => {
-      setGlobalLoading(true);
-      try {
-        const userRoles = await fetchRoles();
-        setRoles(userRoles);
-        setIsAuthenticated(true);
-      } catch (err) {
-        invalidateAuth();
-      } finally {
-        setGlobalLoading(false);
-      }
-    };
-
-    if (authEnabled) {
-      trySessionRecovery();
+  // Define a stable queryFn; note that we no longer auto-run it.
+  const fetchRolesQuery = React.useCallback(async () => {
+    setGlobalLoading(true);
+    try {
+      const userRoles = await authService.fetchRoles();
+      setRoles(userRoles);
+      setIsAuthenticated(true);
+      return userRoles;
+    } catch (err) {
+      invalidateAuth();
+      throw err;
+    } finally {
+      setGlobalLoading(false);
     }
-  }, [authEnabled, setGlobalLoading]);
+  }, [setGlobalLoading, authService]); // ensure these dependencies are stable
+
+  // Disable automatic fetching by setting enabled:false.
+  const { refetch: refetchRoles } = useQuery({
+    queryKey: ["fetchRoles"],
+    queryFn: fetchRolesQuery,
+    enabled: false, // manual control
+    staleTime: Infinity,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+
+  // On mount (or when authEnabled becomes true) trigger a one-time refetch.
+  useEffect(() => {
+    if (authEnabled) {
+      refetchRoles();
+    }
+  }, [authEnabled, refetchRoles]);
+
+  const login = async (user: string, pass: string) => {
+    setGlobalLoading(true);
+    try {
+      await authService.login(user, pass);
+      setUsername(user);
+      await refetchRoles();
+    } finally {
+      setGlobalLoading(false);
+    }
+  };
+
+  const logout = () => {
+    authService.logout().finally(() => {
+      invalidateAuth();
+    });
+  };
 
   const contextValue: AuthContextType = {
     isAuthenticated,

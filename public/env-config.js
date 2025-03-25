@@ -3,5 +3,5 @@
 
 window._env_ = {
   API_URL: "http://localhost:8080",
-  ENABLE_AUTH: "false",
+  ENABLE_AUTH: "true",
 };

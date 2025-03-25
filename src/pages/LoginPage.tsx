@@ -23,11 +23,6 @@ const LoginPage: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
 
-  if (isAuthenticated) {
-    // User is already authenticated so redirect them to the default landing page
-    return <Navigate to={DEFAULT_LANDING_PAGE} replace />;
-  }
-
   // Load the remembered username from localStorage on mount
   useEffect(() => {
     const savedUsername = localStorage.getItem("rememberedUsername");
@@ -54,6 +49,10 @@ const LoginPage: React.FC = () => {
       setError(err.message || "Login failed");
     }
   };
+  if (isAuthenticated) {
+    // User is already authenticated so redirect them to the default landing page
+    return <Navigate to={DEFAULT_LANDING_PAGE} replace />;
+  }
 
   return (
     <Box
