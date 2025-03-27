@@ -5,45 +5,13 @@ import { SearchForm } from "@components/SearchForm";
 import { TableColumn } from "@root/components/Table";
 import { UseSearchFormConfig } from "@hooks/useSearchForm";
 
+// Import the service items
+import { searchPeople, SearchCriteria, PersonRecord } from "@api/peopleService";
+
+// For your FormRenderer
 import { FormConfigDictionary, LayoutConfig } from "@components/FormRenderer";
 
-// Define types for our search.
-export interface SearchCriteria {
-  textQuery?: string;
-  showActive?: boolean;
-  category?: string;
-  sortOrder?: string;
-  // Additional form fields...
-}
-
-export interface PeopleSearchParams {
-  searchText?: string;
-  onlyActive?: boolean;
-  category?: string;
-  sortOrder?: string;
-  // Any additional parameters for the API
-}
-
-// Format of the data returned from the API.
-export interface PersonRecord {
-  id: number;
-  name: string;
-  username: string;
-  email: string;
-  address: {
-    street: string;
-    suite: string;
-    city: string;
-    zipcode: string;
-    geo: {
-      lat: string;
-      lng: string;
-    };
-  };
-}
-
-// Define your table columns (update as needed)
-const tableColumns: TableColumn<PersonRecord>[] = [
+export const tableColumns: TableColumn<PersonRecord>[] = [
   { header: "ID", field: "id" },
   { header: "Name", field: "name" },
   { header: "Username", field: "username" },
@@ -58,7 +26,7 @@ const tableColumns: TableColumn<PersonRecord>[] = [
   },
 ];
 
-// Example form configuration for FormRenderer.
+// Example form config
 const formConfig: FormConfigDictionary = {
   textQuery: { name: "textQuery", label: "Search Query", type: "text" },
   showActive: {
@@ -77,9 +45,10 @@ const formConfig: FormConfigDictionary = {
       { label: "Category C", value: "c" },
     ],
   },
-  // ... add any additional fields as needed
+  // Add others as needed...
 };
 
+// Example layout config
 const layoutConfig: LayoutConfig = {
   rows: [
     {
@@ -95,27 +64,19 @@ const layoutConfig: LayoutConfig = {
         },
       ],
     },
-    // ... additional layout rows if needed
+    // Additional rows...
   ],
 };
 
 export default function ExampleSearchPage() {
-  const searchConfig: UseSearchFormConfig<
-    PeopleSearchParams,
-    SearchCriteria,
-    PersonRecord
-  > = {
-    path: "https://jsonplaceholder.typicode.com/users",
-    method: "GET",
-    op: "searchPeople",
-    transformOut: (form) => form,
-    transformResults: (rawData) => rawData,
-    paginationConfig: {
-      initialPage: 0,
-      rowsPerPage: 10,
-      defaultSortField: "id",
-      defaultSortDirection: "asc",
-    },
+  // Our new config is simpler: we pass "searchFn" from the service
+  const searchConfig: UseSearchFormConfig<SearchCriteria, PersonRecord> = {
+    searchFn: searchPeople, // main difference: we pass a function
+    initialValues: {}, // optionally set default form values
+    initialPage: 0,
+    rowsPerPage: 10,
+    defaultSortField: "id",
+    defaultSortDirection: "asc",
   };
 
   return (
@@ -132,10 +93,10 @@ export default function ExampleSearchPage() {
           fontWeight: 700,
         }}
       >
-        Search + Table Example
+        Hybrid Search + Table Example
       </Typography>
 
-      <SearchForm<PeopleSearchParams, SearchCriteria, PersonRecord>
+      <SearchForm<SearchCriteria, PersonRecord>
         config={searchConfig}
         formConfig={formConfig}
         layoutConfig={layoutConfig}
