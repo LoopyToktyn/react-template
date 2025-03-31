@@ -7,13 +7,14 @@ import {
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
-import App from "./App";
+import App from "@root/App";
 import { AuthProvider } from "@context/AuthContext";
 import { LoadingProvider } from "@context/LoadingContext";
 import { ColorModeProvider } from "@context/ColorModeContext";
 import axiosInstance from "@api/axiosInstance";
 
 import "@styles/global.css";
+import { registerQueryClient } from "@api/lookupService";
 
 const defaultQueryFn = async ({
   queryKey,
@@ -49,6 +50,8 @@ const queryClient = new QueryClient({
     },
   } as DefaultOptions,
 });
+
+registerQueryClient(queryClient); // For sync lookup service
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
