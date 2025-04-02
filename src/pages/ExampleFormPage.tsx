@@ -1,5 +1,3 @@
-// src/ExamplePage.tsx
-
 import { Container, Typography, Button } from "@mui/material";
 import { useCrudForm } from "@root/hooks/useCrudForm";
 import FormRenderer, {
@@ -7,9 +5,8 @@ import FormRenderer, {
   LayoutConfig,
 } from "@components/FormRenderer";
 import { ApiRequest, ApiResponse, FormShape } from "@root/types";
+import axios from "axios"; // or use `axiosInstance` if preferred
 
-// ---------------------
-// Example API Type Definitions for this page
 export interface UserApiRequest extends ApiRequest {
   name: string;
   email: string;
@@ -47,17 +44,6 @@ export interface UserFormShape extends FormShape {
 }
 
 // ---------------------
-// API Transformation Functions
-const transformIn = (apiData: any) => ({
-  ...apiData,
-  customData: apiData.customData || { option: "", checked: false },
-});
-
-const transformOut = (formData: any) => ({
-  ...formData,
-});
-
-// ---------------------
 // Form Configuration
 const formConfig: FormConfigDictionary = {
   name: { name: "name", label: "Name", type: "text", required: true },
@@ -92,7 +78,6 @@ const formConfig: FormConfigDictionary = {
       { label: "TypeScript", value: "typescript" },
     ],
   },
-
   addresses: {
     name: "addresses",
     label: "Addresses",
@@ -130,7 +115,6 @@ const formConfig: FormConfigDictionary = {
 const exampleLayout: LayoutConfig = {
   rows: [
     {
-      // ROW #1 - Basic Info
       gridProps: { spacing: 2 },
       columns: [
         {
@@ -144,48 +128,23 @@ const exampleLayout: LayoutConfig = {
       ],
     },
     {
-      // ROW #2 - Description
+      gridProps: { spacing: 2 },
+      columns: [{ fields: ["description"], gridProps: { xs: 12 } }],
+    },
+    {
       gridProps: { spacing: 2 },
       columns: [
-        {
-          fields: ["description"],
-          gridProps: { xs: 12 },
-        },
+        { fields: ["country"], gridProps: { xs: 12, sm: 6 } },
+        { fields: ["skills"], gridProps: { xs: 12, sm: 6 } },
       ],
     },
     {
-      // ROW #3 - Country & Skills
       gridProps: { spacing: 2 },
-      columns: [
-        {
-          fields: ["country"],
-          gridProps: { xs: 12, sm: 6 },
-        },
-        {
-          fields: ["skills"],
-          gridProps: { xs: 12, sm: 6 },
-        },
-      ],
+      columns: [{ fields: ["addresses"], gridProps: { xs: 12 } }],
     },
     {
-      // ROW #4 - Addresses
       gridProps: { spacing: 2 },
-      columns: [
-        {
-          fields: ["addresses"],
-          gridProps: { xs: 12 },
-        },
-      ],
-    },
-    {
-      // ROW #5 - Custom Composite Field
-      gridProps: { spacing: 2 },
-      columns: [
-        {
-          fields: ["customData"],
-          gridProps: { xs: 12 },
-        },
-      ],
+      columns: [{ fields: ["customData"], gridProps: { xs: 12 } }],
     },
   ],
 };
@@ -193,24 +152,33 @@ const exampleLayout: LayoutConfig = {
 // ---------------------
 // Example Page Component
 export default function ExampleFormPage() {
-  const { formData, setFormData, isLoading, update, resetForm } = useCrudForm<
-  UserApiRequest,
-    UserApiResponse,
-    UserFormShape
-  >({
-    id: "1",
-    fetchConfig: {
-      path: "https://jsonplaceholder.typicode.com/users/{id}",
-      op: "GET",
-    },
-    updateConfig: {
-      path: "https://jsonplaceholder.typicode.com/users/{id}",
-      op: "PUT",
-    },
-    defaults: { name: "", email: "", description: "" },
-    transformIn,
-    transformOut,
-  });
+  const { formData, setFormData, isLoading, update, resetForm } =
+    useCrudForm<UserFormShape>({
+      id: "1",
+      fetch: async () => {
+        const res = await axios.get(
+          "https://jsonplaceholder.typicode.com/users/1"
+        );
+        const data = res.data;
+        return {
+          ...data,
+          customData: data.customData || { option: "", checked: false },
+        };
+      },
+      update: (formData) =>
+        axios.put("https://jsonplaceholder.typicode.com/users/1", formData),
+      defaults: {
+        name: "",
+        email: "",
+        description: "",
+        gender: "",
+        subscribe: false,
+        country: "",
+        skills: [],
+        addresses: [],
+        customData: { option: "", checked: false },
+      },
+    });
 
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
@@ -250,7 +218,7 @@ export default function ExampleFormPage() {
       <Button
         onClick={() => resetForm()}
         variant="outlined"
-        sx={{ mt: 2 , color: "primary.light"}}
+        sx={{ mt: 2, color: "primary.light" }}
       >
         Reset
       </Button>

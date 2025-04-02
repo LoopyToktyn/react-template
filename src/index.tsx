@@ -15,6 +15,7 @@ import axiosInstance from "@api/axiosInstance";
 
 import "@styles/global.css";
 import { registerQueryClient } from "@api/lookupService";
+import { FormStateProvider } from "./context/FormContext";
 
 const defaultQueryFn = async ({
   queryKey,
@@ -64,7 +65,9 @@ root.render(
         <ColorModeProvider>
           <LoadingProvider>
             <AuthProvider>
-              <App />
+              <FormStateProvider>
+                <App />
+              </FormStateProvider>
             </AuthProvider>
           </LoadingProvider>
         </ColorModeProvider>
