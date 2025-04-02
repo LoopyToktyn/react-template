@@ -141,6 +141,16 @@ const FormRenderer: React.FC<FormRendererProps> = ({
     }
 
     const errorMsg = errors[field.name] || "";
+
+      // **Prioritize customRender if it exists**
+  if (field.customRender) {
+    return field.customRender(
+      value,
+      (val) => onFieldChange(field.name, val),
+      errorMsg
+    );
+  }
+
     const commonProps = {
       name: field.name,
       label: field.label,
@@ -252,16 +262,6 @@ const FormRenderer: React.FC<FormRendererProps> = ({
             columns={field.columns} // optional, if you store column config in field.columns
           />
         );
-      case "composite":
-        return field.customRender ? (
-          <div>
-            {field.customRender(
-              value,
-              (val) => onFieldChange(field.name, val),
-              errorMsg
-            )}
-          </div>
-        ) : null;
       default:
         return null;
     }
@@ -305,7 +305,7 @@ const FormRenderer: React.FC<FormRendererProps> = ({
   // If no layout config, just display in one column
   if (!layoutConfig) {
     return (
-      <Grid container spacing={2}>
+      <Grid container>
         {Object.keys(formConfig).map((fieldName) => (
           <Grid item xs={12} key={fieldName}>
             {renderField(fieldName)}

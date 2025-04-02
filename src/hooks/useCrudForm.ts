@@ -1,7 +1,8 @@
 // src/CrudForm/useCrudForm.ts
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
+import { useFormState } from "@context/FormContext";
 import axiosInstance from "@api/axiosInstance";
 
 export interface CrudConfig {
@@ -27,8 +28,8 @@ export interface CrudOptions<
 
 export function useCrudForm<
   TApiResponse extends Record<string, any> = any,
-  TApiRequest = any,
-  TFormShape = any
+  TApiRequest extends Record<string, any> = any,
+  TFormShape extends Record<string, any> = any
 >({
   id,
   fetchConfig,
@@ -41,7 +42,11 @@ export function useCrudForm<
   extraParams,
 }: CrudOptions<TApiResponse, TApiRequest, TFormShape>) {
   const queryClient = useQueryClient();
-  const [formData, setFormData] = useState<TFormShape>(transformIn(defaults));
+  const formKey = `crudForm-${id || "new"}`; // Unique key for this form
+  const { getFormState, setFormState, clearFormState } = useFormState();
+
+  // Safely retrieve the form state or fallback to defaults
+  const formData: TFormShape = (getFormState(formKey) as TFormShape) || transformIn(defaults);
 
   const makeRequest = async (config?: CrudConfig, data?: any) => {
     if (!config) throw new Error("Request configuration is missing");
@@ -91,12 +96,11 @@ export function useCrudForm<
   });
 
   useEffect(() => {
-    if (data) {
-      setFormData((prev) => ({ ...prev, ...data }));
+    if (data && !getFormState(formKey)) {
+      setFormState(formKey, data);
     }
-  }, [data]);
+  }, [data, setFormState, getFormState, formKey]);
 
-  // Create mutation
   const createMutation = useMutation({
     mutationFn: async (newData: TFormShape) => {
       if (!createConfig) throw new Error("Create configuration is missing");
@@ -105,7 +109,6 @@ export function useCrudForm<
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["fetchData"] }),
   });
 
-  // Update mutation
   const updateMutation = useMutation({
     mutationFn: async (updatedData: TFormShape) => {
       if (!id) throw new Error("No ID provided for update.");
@@ -116,7 +119,6 @@ export function useCrudForm<
       queryClient.invalidateQueries({ queryKey: ["fetchData", id] }),
   });
 
-  // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async () => {
       if (!id) throw new Error("No ID provided for delete.");
@@ -126,13 +128,18 @@ export function useCrudForm<
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["fetchData"] }),
   });
 
+  const resetForm = () => {
+    clearFormState(formKey);
+  };
+
   return {
     formData,
-    setFormData,
+    setFormData: (data: TFormShape) => setFormState(formKey, data),
     isLoading,
     error,
     create: createMutation.mutate,
     update: updateMutation.mutate,
     delete: deleteMutation.mutate,
+    resetForm,
   };
 }

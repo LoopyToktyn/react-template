@@ -193,14 +193,14 @@ const exampleLayout: LayoutConfig = {
 // ---------------------
 // Example Page Component
 export default function ExampleFormPage() {
-  const { formData, setFormData, isLoading, update } = useCrudForm<
-    UserApiRequest,
+  const { formData, setFormData, isLoading, update, resetForm } = useCrudForm<
+  UserApiRequest,
     UserApiResponse,
     UserFormShape
   >({
     id: "1",
     fetchConfig: {
-      path: "https://jsonplaceholder.typicode.com/users/{id}", // Can also just pass the PATH and use base URL configured in axios, e.g. '/users/{id}'
+      path: "https://jsonplaceholder.typicode.com/users/{id}",
       op: "GET",
     },
     updateConfig: {
@@ -223,7 +223,10 @@ export default function ExampleFormPage() {
         formState={formData}
         layoutConfig={exampleLayout}
         onFieldChange={(name, value) =>
-          setFormData((prev) => ({ ...prev, [name]: value }))
+          setFormData({
+            ...formData,
+            [name]: value,
+          })
         }
       />
 
@@ -234,6 +237,22 @@ export default function ExampleFormPage() {
         sx={{ mt: 2 }}
       >
         Save
+      </Button>
+      <Button
+        onClick={() => {}}
+        variant="contained"
+        color="primary"
+        disabled
+        sx={{ mt: 2 }}
+      >
+        Disabled
+      </Button>
+      <Button
+        onClick={() => resetForm()}
+        variant="outlined"
+        sx={{ mt: 2 , color: "primary.light"}}
+      >
+        Reset
       </Button>
     </Container>
   );
