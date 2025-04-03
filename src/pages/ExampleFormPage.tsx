@@ -71,6 +71,8 @@ const formConfig: FormConfigDictionary = {
       if (val.trim().length < 2) return "Name must be at least 2 characters.";
       return null;
     },
+    visible: (fs) => [fs.subscribe, true], // Only show if "subscribe" is true and reserve space when hidden,
+    dynamicDependencies: ["country"],
   },
   email: {
     name: "email",
