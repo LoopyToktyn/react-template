@@ -15,6 +15,7 @@ import {
   FormLabel,
 } from "@mui/material";
 import ListField from "./ListField"; // or wherever your ListField is
+import { FormConfigDictionary } from "@components/FormRenderer";
 
 export type FieldType =
   | "text"
@@ -48,11 +49,18 @@ export interface FieldConfig {
   readOnly?: boolean | ((formState: any) => boolean);
   required?: boolean | ((formState: any) => boolean);
   validation?: (formState: any, fieldValue: any) => string | null;
-  customRender?: (
-    value: any,
-    onChange: (value: any) => void,
-    error?: string | null
-  ) => React.ReactNode;
+  customRender?: (params: {
+    value: any;
+    onChange: (newValue: any) => void;
+    error?: string | null;
+    field: FieldConfig;
+    formState: any;
+    formConfig: FormConfigDictionary;
+    path: string;
+    localErrors: Record<string, string>;
+    parentErrors: Record<string, string>;
+  }) => React.ReactNode;
+
   visible?:
     | boolean
     | ((formState: any) => boolean | [boolean, boolean])
@@ -68,6 +76,7 @@ export interface FieldConfig {
 export interface FieldRendererProps {
   field?: FieldConfig; // Marking as optional for extra safety
   formState: any;
+  formConfig: FormConfigDictionary;
   onFieldChange: (fieldPath: string, newState: any) => void;
   parentErrors: Record<string, string>;
   localErrors: Record<string, string>;
@@ -101,6 +110,7 @@ export function setNestedValue(obj: any, path: string, value: any): any {
 export const FieldRenderer: React.FC<FieldRendererProps> = ({
   field,
   formState,
+  formConfig,
   onFieldChange,
   parentErrors,
   localErrors,
@@ -246,7 +256,19 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
   // If there's a customRender, let it take over
   if (field.customRender) {
     return (
-      <>{field.customRender(value, handleChange, errorMsg || null) ?? null}</>
+      <>
+        {field.customRender({
+          value,
+          onChange: handleChange,
+          error: errorMsg || null,
+          field,
+          formState,
+          formConfig,
+          path: evalName,
+          localErrors,
+          parentErrors,
+        }) ?? null}
+      </>
     );
   }
 

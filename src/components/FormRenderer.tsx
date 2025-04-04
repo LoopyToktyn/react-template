@@ -83,6 +83,7 @@ const FormRenderer: React.FC<FormRendererProps> = ({
                       key={fieldName}
                       field={fieldConfig}
                       formState={formState}
+                      formConfig={formConfig}
                       onFieldChange={onFieldChange}
                       parentErrors={errors}
                       localErrors={localErrors}
@@ -108,6 +109,7 @@ const FormRenderer: React.FC<FormRendererProps> = ({
             <FieldRenderer
               field={getFieldConfig(fieldName)}
               formState={formState}
+              formConfig={formConfig}
               onFieldChange={onFieldChange}
               parentErrors={errors}
               localErrors={localErrors}

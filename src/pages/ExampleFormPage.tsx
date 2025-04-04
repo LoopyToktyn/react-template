@@ -143,11 +143,12 @@ const formConfig: FormConfigDictionary = {
     name: "customData",
     label: "Custom Field",
     type: "composite",
-    customRender: (value, onChange, error) => (
-      <div style={{ marginTop: 8 }}>
-        <Typography variant="subtitle1">Custom Field</Typography>
+    customRender: ({ value, onChange, error, formState, field }) => (
+      <div>
+        <Typography variant="subtitle1">
+          {(field.label as string) || "Custom Data"}
+        </Typography>
         <input
-          type="text"
           value={value.option}
           onChange={(e) => onChange({ ...value, option: e.target.value })}
         />
@@ -155,13 +156,10 @@ const formConfig: FormConfigDictionary = {
           type="checkbox"
           checked={value.checked}
           onChange={(e) => onChange({ ...value, checked: e.target.checked })}
-          style={{ marginLeft: 8 }}
         />
         {error && <div style={{ color: "red" }}>{error}</div>}
       </div>
     ),
-    // We depend on both "subscribe" and "country"
-    dynamicDependencies: ["subscribe", "country"],
   },
 
   /** -----------------------------
@@ -273,7 +271,7 @@ export default function ExampleFormPage() {
         return {
           ...data,
           subscribe: false,
-          addresses: [],
+          addresses: [{ street: "abc", city: "how tho", zip: "123" }],
           customData: data.customData || { option: "", checked: false },
           profile: {
             phone: "",
