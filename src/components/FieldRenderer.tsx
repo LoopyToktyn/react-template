@@ -264,7 +264,19 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       handleChange(e.target.value),
     onBlur: handleBlur,
-    sx: evalSx,
+    sx: {
+      // Lower label a little and widen to lessen label/border/helperText overlap
+      "& .MuiInputLabel-shrink": {
+        zIndex: 10000,
+        backgroundColor: (theme: any) => theme.palette.background.default,
+        marginTop: "5px",
+        paddingX: "4px",
+      },
+      "& .MuiOutlinedInput-notchedOutline legend": {
+        marginLeft: "4px",
+      },
+      ...evalSx,
+    },
   };
 
   switch (evalType) {
@@ -284,7 +296,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
               onBlur={handleBlur}
               name={evalName}
               disabled={evalDisabled}
-              sx={evalSx}
+              sx={commonProps.sx}
             />
           }
           label={evalLabel}
@@ -316,7 +328,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
 
     case "select":
       return (
-        <FormControl fullWidth error={Boolean(errorMsg)} sx={evalSx}>
+        <FormControl fullWidth error={Boolean(errorMsg)} sx={commonProps.sx}>
           {evalLabel && <InputLabel>{evalLabel}</InputLabel>}
           <Select
             label={evalLabel}
@@ -337,7 +349,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
 
     case "multiselect":
       return (
-        <FormControl fullWidth error={Boolean(errorMsg)} sx={evalSx}>
+        <FormControl fullWidth error={Boolean(errorMsg)} sx={commonProps.sx}>
           {evalLabel && <InputLabel>{evalLabel}</InputLabel>}
           <Select
             multiple
