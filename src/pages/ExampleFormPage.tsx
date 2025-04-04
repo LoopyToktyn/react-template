@@ -63,7 +63,7 @@ const formConfig: FormConfigDictionary = {
   name: {
     name: "name",
     // Example label referencing another field ("country")
-    label: (fs) => `Name (currently from "${fs.country || "Unknown"}")`,
+    label: ({ fs }) => `Name (currently from "${fs.country || "Unknown"}")`,
     type: "text",
     required: true,
     validation: (fs, val) => {
@@ -71,7 +71,7 @@ const formConfig: FormConfigDictionary = {
       if (val.trim().length < 2) return "Name must be at least 2 characters.";
       return null;
     },
-    visible: (fs) => [fs.subscribe, true], // Only show if "subscribe" is true and reserve space when hidden,
+    visible: ({ fs }) => [fs.subscribe, true], // Only show if "subscribe" is true and reserve space when hidden,
     dynamicDependencies: ["country"],
   },
   email: {
@@ -101,7 +101,7 @@ const formConfig: FormConfigDictionary = {
   },
   subscribe: {
     name: "subscribe",
-    label: (fs) => (fs.name ? `Subscribe ${fs.name}?` : "Subscribe?"),
+    label: ({ fs }) => (fs.name ? `Subscribe ${fs.name}?` : "Subscribe?"),
     type: "checkbox",
     // Mark that we depend on "name" so the label re-renders when name changes
     dynamicDependencies: ["name"],
@@ -109,7 +109,7 @@ const formConfig: FormConfigDictionary = {
   country: {
     name: "country",
     // For demonstration, let's have the label reflect subscription status
-    label: (fs) =>
+    label: ({ fs }) =>
       fs.subscribe ? "Country (Subscribed)" : "Country (Not Subscribed)",
     type: "select",
     options: [
@@ -131,7 +131,7 @@ const formConfig: FormConfigDictionary = {
   },
   addresses: {
     name: "addresses",
-    label: (fs) => `Addresses for ${fs.name || "Unknown User"}`,
+    label: ({ fs }) => `Addresses for ${fs.name || "Unknown User"}`,
     type: "list",
     columns: [
       { key: "street", label: "Street" },
@@ -173,7 +173,7 @@ const formConfig: FormConfigDictionary = {
   "address.street": {
     name: "address.street",
     // Example label override referencing subscribe
-    label: (fs) =>
+    label: ({ fs }) =>
       fs.subscribe
         ? "Address Line 1 (Subscriber)"
         : "Address Line 1 (Non-subscriber)",
